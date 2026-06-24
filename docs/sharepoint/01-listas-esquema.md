@@ -53,6 +53,13 @@ Equivale a `SubmissionRequest`.
 
 Equivale a `SubmissionItem`. Relación 1:N con `Solicitudes`.
 
+> **Modelo ancho (decidido), no EAV.** Se evaluó un modelo Entidad-Atributo-Valor
+> (una lista `id, campo, respuesta, fecha` con ~37 filas por tablero) y se descartó:
+> en SharePoint multiplicaría las filas ~37× y chocaría el umbral de 5.000 ítems
+> con apenas ~45 solicitudes, además de perder el tipado (Number/Date/Choice), el
+> cálculo de corriente, y la delegación en Power Apps. Los 37 campos son fijos y
+> conocidos, así que el modelo ancho (1 fila por tablero) es el correcto.
+
 ### Columna de relación
 
 | Columna | Tipo SharePoint | Notas |
