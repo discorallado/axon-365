@@ -39,7 +39,7 @@ Power Pages, Excel) en [docs/adr/0001-canvas-sharepoint-sobre-dataverse.md](docs
 |---|---|
 | `docs/adr/` | Decisiones de arquitectura (por qué Canvas+SharePoint) |
 | `docs/sharepoint/` | Esquema de las 3 listas: columnas, tipos, opciones de choice |
-| `docs/powerapps/` | Guía paso a paso para construir la Power App Canvas |
+| `docs/powerapps/` | Guías de las Power Apps Canvas: `02` captura, `04` gestión interna |
 | `docs/powerautomate/` | Definición de los flujos (notificaciones, estados) |
 
 ## Orden de construcción recomendado
@@ -47,7 +47,7 @@ Power Pages, Excel) en [docs/adr/0001-canvas-sharepoint-sobre-dataverse.md](docs
 1. **SharePoint** — crear las 3 listas según [docs/sharepoint/01-listas-esquema.md](docs/sharepoint/01-listas-esquema.md).
 2. **Power Apps** — construir la app de captura siguiendo [docs/powerapps/02-canvas-guia-construccion.md](docs/powerapps/02-canvas-guia-construccion.md).
 3. **Power Automate** — crear los flujos de [docs/powerautomate/03-flujos.md](docs/powerautomate/03-flujos.md).
-4. **Gestión interna** — vistas de lista + app de bandeja.
+4. **Gestión interna** — app de bandeja + vistas de lista, según [docs/powerapps/04-app-gestion-interna.md](docs/powerapps/04-app-gestion-interna.md).
 
 ## Estado
 
