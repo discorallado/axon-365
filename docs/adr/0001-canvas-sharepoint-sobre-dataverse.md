@@ -56,6 +56,13 @@ dueño del producto, 2026-06-24.)
 - **RichEditor → columnas de texto enriquecido** de SharePoint; se conserva el
   formato de `board_function` y `loads_to_feed`.
 - **`reference_code`** lo genera Power Automate al crear la cabecera.
+- **A-3 (roles en estados):** la regla dura se aplica en **Power Automate F-2**
+  (servidor), gateando solo **rechazar** y **reabrir**; rol resuelto por grupo AAD
+  o lista `RolesUsuarios`. La app Canvas espeja para UX. Detalle en `03-flujos.md`.
+- **M-1 (adjuntos):** **adjuntos nativos planos** + convención de nombres. Se
+  descarta la biblioteca con metadatos por complejidad (Canvas no escribe metadatos).
+- **B-1 (bifásico):** se **elimina** `bifasico` de `SistemaElectrico` en M365 (el
+  repo original lo conserva, está congelado).
 
 ### Matriz de permisos (verificada contra `SubmissionRequestPolicy` y `SubmissionStateMachine`)
 

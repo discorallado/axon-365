@@ -72,8 +72,13 @@ rechazada    → nueva   (reapertura, SOLO super_admin)
 - `aprobada` y `rechazada` son terminales: solo se "reabren" a `nueva`.
 - **Reglas por rol** (del original): rechazar → `super_admin`/`supervisor`;
   avanzar (cualquier otra) → `super_admin`/`ingeniero`/`supervisor`; reabrir →
-  solo `super_admin`. Ver A-3 en la revisión: cómo aplicarlas en M365 es una
-  decisión abierta.
+  solo `super_admin`.
+  **Decisión A-3 (resuelta):** la regla dura se aplica **aquí, en F-2** (servidor),
+  igual que el `SubmissionStateMachine` original; la app Canvas solo espeja las
+  reglas para UX. Se gatean únicamente las acciones sensibles —**rechazar** y
+  **reabrir**—; el resto se cubre con el permiso de edición de la lista. El rol del
+  editor se resuelve por **grupo de seguridad de Azure AD por rol** (o una lista
+  `RolesUsuarios` si no se administra en AAD). Ver paso 2-bis.
 
 Cualquier otra transición es inválida y debe revertirse.
 
@@ -109,6 +114,17 @@ el disparo a cambios reales de `Estado`:
    - **Si NO es válida:** revertir — **Actualizar elemento** dejando
      `Estado = EstadoPrevio` y notificar al usuario que la transición no está
      permitida. Terminar.
+
+2-bis. **Validar el rol del editor (decisión A-3).** Solo para acciones sensibles:
+   - Obtener el rol del editor: comprobar pertenencia del
+     `@{triggerOutputs()?['body/Editor/Email']}` a un grupo de seguridad de Azure
+     AD (acción *Comprobar pertenencia a grupo* / `Office 365 Groups`), o `LookUp`
+     en la lista `RolesUsuarios`.
+   - **Si `Estado = rechazada`** y el rol ∉ {`super_admin`,`supervisor`} → revertir
+     a `EstadoPrevio`, notificar "No autorizado para rechazar". Terminar.
+   - **Si la transición es reapertura** (`EstadoPrevio` terminal → `nueva`) y el rol
+     ≠ `super_admin` → revertir, notificar "Solo super_admin puede reabrir". Terminar.
+   - El resto de transiciones (avanzar) no requieren chequeo extra de rol aquí.
 
 3. **Si es válida — registrar en `HistorialEstados`.**
    - **Crear elemento** en `HistorialEstados`:

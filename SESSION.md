@@ -36,8 +36,10 @@ original queda congelado como proyecto personal y NO se toca.
 - `docs/powerautomate/03-flujos.md` — flujos F-1 (alta) y F-2 (estados), revisados.
 - Pasó por `/revisor` (commit 50def5a): se corrigió la máquina de estados (era
   incompleta), anti-bucle de F-2, init de EstadoPrevio, matriz de permisos, tags
-  de adjuntos, umbral 5000. Quedan 3 decisiones abiertas (A-3 roles en flujos,
-  M-1 tags de adjuntos, B-1 fórmula bifásica).
+  de adjuntos, umbral 5000.
+- Decisiones de la revisión **resueltas** (2026-06-24): A-3 → reglas de rol en F-2
+  (gatea rechazar/reabrir, rol vía grupo AAD o lista RolesUsuarios); M-1 → adjuntos
+  nativos planos + convención de nombres; B-1 → eliminado `bifasico` en M365.
 
 ### Pendiente ⏳ (construcción real en el navegador, la hace el usuario)
 - [ ] Crear las 3 listas SharePoint según el esquema.
@@ -45,7 +47,7 @@ original queda congelado como proyecto personal y NO se toca.
 - [ ] Crear los flujos Power Automate.
 - [ ] Construir la app/vista de gestión interna (bandeja) — guía ya escrita (`04`).
 - [ ] Subir este repo a GitHub.
-- [ ] Resolver las 3 decisiones abiertas de la revisión (A-3, M-1, B-1).
+- [x] Resolver las 3 decisiones abiertas de la revisión (A-3, M-1, B-1). ✅
 
 ## Próximo paso concreto
 Crear las 3 listas en SharePoint siguiendo `docs/sharepoint/01-listas-esquema.md`,

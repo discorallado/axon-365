@@ -109,7 +109,7 @@ Equivale a `SubmissionItem`. Relación 1:N con `Solicitudes`.
 |---|---|---|
 | `TensionSuministro` | Elección | `supply_voltage`: `220`,`380`,`400`,`440`,`480`,`690`,`1000`,`otro`. Obligatoria. |
 | `OtraTension` | Número | `supply_voltage_other` (V). Solo si `otro`. |
-| `SistemaElectrico` | Elección | `electrical_system`: `trifasico`, `bifasico`, `monofasico`, `dc`, `otro`. Obligatoria. |
+| `SistemaElectrico` | Elección | `electrical_system`: `trifasico`, `monofasico`, `dc`, `otro`. Obligatoria. **Sin `bifasico`** (eliminado en M365, decisión B-1; el repo original lo conserva). |
 | `OtroSistemaElectrico` | Una línea de texto | `electrical_system_other`. Solo si `otro`. |
 | `PotenciaEstimada` | Número (decimal) | `estimated_power`. Obligatoria. |
 | `UnidadPotencia` | Elección | `power_unit`: `kW`, `kVA`. Por defecto `kW`. |
@@ -172,10 +172,14 @@ estado (no se edita a mano).
   solicitud y puede superar el umbral. Indexar la columna Lookup `Solicitud` y
   cualquier columna usada para filtrar/ordenar en vistas. Sin índice, las vistas y
   consultas fallan pasado ese límite.
-- **Adjuntos sin tag semántico:** los adjuntos nativos de SharePoint son una lista
-  plana sin categoría; el sistema original etiquetaba cada archivo
+- **Adjuntos (decisión M-1 resuelta: adjuntos nativos planos).** Se usan los
+  adjuntos nativos del ítem de lista. El sistema original etiquetaba cada archivo
   (`technical_specs`, `site_photo`, `load_list`, `unilineal_diagram`,
-  `mechanical_plans`) y los agrupaba. **Decisión pendiente:** (a) usar adjuntos
-  nativos con convención de nombres, o (b) una **biblioteca de documentos** con una
-  columna de metadato `TipoArchivo` + Lookup a la solicitud/tablero, que conserva
-  la categoría a costa de más complejidad.
+  `mechanical_plans`) y los agrupaba por tag; con adjuntos nativos **se pierde esa
+  categorización** (se sabe cuántos archivos hay, no cuál es el unilineal salvo por
+  el nombre). Mitigación: **convención de nombres** al subir (p. ej.
+  `unilineal_<codigo>.pdf`). La alternativa fiel —biblioteca de documentos con
+  columna `TipoArchivo` + Lookup— se descartó por complejidad: el control de
+  adjuntos de Canvas no escribe metadatos, obligaría a subir vía conector
+  `Crear archivo` + `Actualizar propiedades`. Reconsiderar solo si la falta de
+  categoría molesta en operación.

@@ -146,7 +146,6 @@ With(
             Switch(
                 ddSistema.Selected.Value,
                 "trifasico", watts / (Sqrt(3) * v),
-                "bifasico",  watts / (v * 2),
                 "monofasico", watts / v,
                 "dc",         watts / v,
                 Blank()
