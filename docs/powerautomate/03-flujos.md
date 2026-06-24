@@ -23,18 +23,25 @@ Equivale a `NewSubmissionReceived` + `SubmissionConfirmed` + generación de
 1. **Generar código de referencia.**
    - Inicializar variable `RefCode`:
      ```
-     SOL-@{toUpper(substring(replace(guid(), '-', ''), 0, 8))}
+     SOL-@{toUpper(substring(replace(guid(), '-', ''), 0, 12))}
      ```
+   - 12 hex (no 8) para acercarse a la entropía del original `Str::random(8)`.
+   - **Verificar unicidad:** antes de asignar, **Obtener elementos** filtrando
+     `Title eq 'RefCode'`; si existe, regenerar. (El original tampoco fuerza
+     unicidad a nivel BD, pero aquí el riesgo de colisión es mayor.)
    - **Actualizar elemento** en `Solicitudes`: `Title = RefCode`.
 
-2. **Notificar al equipo interno** (reemplaza la notificación a `super_admin` y
+2. **Inicializar `EstadoPrevio`** = `nueva` (respaldo, por si la app no lo seteó).
+   Necesario para que F-2 evalúe correctamente la primera transición.
+
+3. **Notificar al equipo interno** (reemplaza la notificación a `super_admin` y
    `supervisor`).
    - **Enviar un correo (V2)** — Office 365 Outlook.
    - Para: el grupo/lista de gestores (o destinatarios fijos del equipo).
    - Asunto: `Nueva solicitud @{variables('RefCode')} — @{triggerOutputs()?['body/NombreProyecto']}`
    - Cuerpo: datos de contacto, proyecto, link al ítem en SharePoint.
 
-3. **Acuse al solicitante** (reemplaza `SubmissionConfirmed`).
+4. **Acuse al solicitante** (reemplaza `SubmissionConfirmed`).
    - Condición: `ContactoEmail` no vacío.
    - **Enviar un correo (V2)** a `ContactoEmail`.
    - Asunto: `Recibimos tu solicitud @{variables('RefCode')}`
@@ -50,46 +57,63 @@ Equivale a `NewSubmissionReceived` + `SubmissionConfirmed` + generación de
 Equivale a `SubmissionStateMachine` + escritura de `SubmissionStatusHistory`.
 Hace cumplir las transiciones válidas y audita cada cambio.
 
-**Transiciones permitidas** (del enum `SubmissionStatus` original):
+**Transiciones permitidas** (verificadas contra `SubmissionStateMachine::ALLOWED_TRANSITIONS`
+del sistema original, no inventar):
 
 ```
-nueva        → en_revision
-en_revision  → cotizada
-cotizada     → aprobada     (terminal)
-cotizada     → rechazada    (terminal)
+nueva        → en_revision, rechazada
+en_revision  → cotizada, rechazada
+cotizada     → aprobada, rechazada, en_revision   ← puede volver a revisión
+aprobada     → nueva   (reapertura, SOLO super_admin)
+rechazada    → nueva   (reapertura, SOLO super_admin)
 ```
+
+- El mismo estado → mismo estado **nunca** se permite.
+- `aprobada` y `rechazada` son terminales: solo se "reabren" a `nueva`.
+- **Reglas por rol** (del original): rechazar → `super_admin`/`supervisor`;
+  avanzar (cualquier otra) → `super_admin`/`ingeniero`/`supervisor`; reabrir →
+  solo `super_admin`. Ver A-3 en la revisión: cómo aplicarlas en M365 es una
+  decisión abierta.
 
 Cualquier otra transición es inválida y debe revertirse.
 
 **Disparador:** SharePoint — *Cuando se modifica un elemento* en `Solicitudes`.
 
+**⚠️ Trigger condition obligatoria (evita auto-bucle).** F-2 modifica
+`EstadoPrevio` al final, y F-1 modifica `Title`; ambos re-dispararían F-2. Limitar
+el disparo a cambios reales de `Estado`:
+
+```
+@not(equals(triggerOutputs()?['body/Estado/Value'], triggerOutputs()?['body/EstadoPrevio/Value']))
+```
+
 **Pasos:**
 
 1. **Obtener valores anterior y nuevo del estado.**
-   - El disparador da el valor actual (`Estado`). Para el anterior, usar los
-     **valores de la versión previa**: activar el disparador con
-     *trigger condition* sobre cambio de `Estado`, y guardar el estado anterior
-     en una columna oculta `EstadoPrevio` que el propio flujo actualiza al final
-     (patrón estándar para "valor anterior" en SharePoint).
+   - El disparador da el valor actual (`Estado`). El anterior se lee de la columna
+     oculta `EstadoPrevio`, que el flujo actualiza al final (patrón estándar para
+     "valor anterior" en SharePoint, que no expone la versión previa en el disparador).
+   - `EstadoPrevio` se inicializa a `nueva` al crear (app + F-1), de modo que la
+     primera transición se evalúe bien.
 
 2. **Validar la transición.**
-   - **Condición** — comprobar que `(EstadoPrevio → Estado)` esté en la lista
-     permitida. Expresión, p. ej.:
+   - **Condición** — comprobar que `(EstadoPrevio → Estado)` esté permitida:
      ```
      or(
-       and(equals(EstadoPrevio,'nueva'),       equals(Estado,'en_revision')),
-       and(equals(EstadoPrevio,'en_revision'), equals(Estado,'cotizada')),
-       and(equals(EstadoPrevio,'cotizada'),    equals(Estado,'aprobada')),
-       and(equals(EstadoPrevio,'cotizada'),    equals(Estado,'rechazada'))
+       and(equals(EstadoPrevio,'nueva'),       or(equals(Estado,'en_revision'), equals(Estado,'rechazada'))),
+       and(equals(EstadoPrevio,'en_revision'), or(equals(Estado,'cotizada'),    equals(Estado,'rechazada'))),
+       and(equals(EstadoPrevio,'cotizada'),    or(equals(Estado,'aprobada'),     equals(Estado,'rechazada'), equals(Estado,'en_revision'))),
+       and(or(equals(EstadoPrevio,'aprobada'), equals(EstadoPrevio,'rechazada')), equals(Estado,'nueva'))
      )
      ```
    - **Si NO es válida:** revertir — **Actualizar elemento** dejando
-     `Estado = EstadoPrevio` y, opcionalmente, notificar al usuario que la
-     transición no está permitida. Terminar.
+     `Estado = EstadoPrevio` y notificar al usuario que la transición no está
+     permitida. Terminar.
 
 3. **Si es válida — registrar en `HistorialEstados`.**
    - **Crear elemento** en `HistorialEstados`:
      - `Solicitud` = ID del ítem disparador
+     - `Organizacion` = `Organizacion` del ítem (multi-tenant-ready)
      - `EstadoAnterior` = `EstadoPrevio`
      - `EstadoNuevo` = `Estado`
      - `CambiadoPor` = `@{triggerOutputs()?['body/Editor/Email']}`
@@ -98,8 +122,13 @@ Cualquier otra transición es inválida y debe revertirse.
 
 4. **Actualizar `EstadoPrevio`** = `Estado` (para el próximo cambio).
 
-5. **Notificar** al solicitante y/o asignado del nuevo estado (opcional, según
-   reglas de negocio: p. ej. avisar al cliente cuando pasa a `cotizada`).
+5. **Notificación de aprobación** (reproduce `SubmissionApprovedNotification`).
+   - Condición: `Estado = aprobada`.
+   - Notificar a los usuarios **`super_admin` + `ingeniero`** activos (no al
+     solicitante). En M365: correo a un grupo/lista de distribución de esos roles.
+
+6. **Notificación de avance al solicitante/asignado** (opcional, según negocio:
+   p. ej. avisar al cliente cuando pasa a `cotizada`).
 
 > **Nota sobre concurrencia:** el patrón `EstadoPrevio` es la forma estándar de
 > obtener el "valor anterior" en SharePoint, que no expone el valor previo en el
@@ -112,8 +141,9 @@ Cualquier otra transición es inválida y debe revertirse.
 
 | Sistema original | Power Automate |
 |---|---|
-| `reference_code = 'SOL-'.Str::random(8)` | F-1 paso 1 (`guid()` recortado) |
-| `NewSubmissionReceived` → super_admin/supervisor | F-1 paso 2 (correo/Teams al equipo) |
-| `SubmissionConfirmed` → solicitante | F-1 paso 3 (correo al `ContactoEmail`) |
-| `SubmissionStateMachine::ALLOWED_TRANSITIONS` | F-2 paso 2 (condición de validación) |
+| `reference_code = 'SOL-'.Str::random(8)` | F-1 paso 1 (`guid()` recortado a 12 hex + chequeo de unicidad) |
+| `NewSubmissionReceived` → super_admin/supervisor | F-1 paso 3 (correo/Teams al equipo) |
+| `SubmissionConfirmed` → solicitante | F-1 paso 4 (correo al `ContactoEmail`) |
+| `SubmissionStateMachine::ALLOWED_TRANSITIONS` | F-2 paso 2 (condición de validación, incl. rechazo directo, retroceso y reapertura) |
 | `SubmissionStatusHistory::create(...)` | F-2 paso 3 (crear ítem en HistorialEstados) |
+| `SubmissionApprovedNotification` → super_admin/ingeniero | F-2 paso 5 |

@@ -26,6 +26,7 @@ Equivale a `SubmissionRequest`.
 |---|---|---|
 | `Title` | Una línea de texto | Reutilizada como **código de referencia** `SOL-XXXXXXXX`. Se rellena por Power Automate al crear (ver flujos). |
 | `Estado` | Elección | `nueva`, `en_revision`, `cotizada`, `aprobada`, `rechazada`. Valor por defecto: `nueva`. |
+| `EstadoPrevio` | Elección (oculta) | Mismas 5 opciones. Por defecto `nueva`. La usa F-2 para conocer el estado anterior y validar la transición. No mostrar en formularios de usuario. |
 | `NombreProyecto` | Una línea de texto | `project_name`. Obligatoria. |
 | `UbicacionInstalacion` | Una línea de texto | `installation_location` |
 | `CentroCosto` | Una línea de texto | `cost_center` (ej. `MO-12345`) |
@@ -56,7 +57,7 @@ Equivale a `SubmissionItem`. Relación 1:N con `Solicitudes`.
 
 | Columna | Tipo SharePoint | Notas |
 |---|---|---|
-| `Solicitud` | **Búsqueda (Lookup)** → `Solicitudes` | Vincula cada tablero a su solicitud. Mostrar columna `Title` (código). Obligatoria. |
+| `Solicitud` | **Búsqueda (Lookup)** → `Solicitudes` | Vincula cada tablero a su solicitud. Mostrar columna `Title` (código). Obligatoria. **Indexar esta columna** (ver nota de umbral 5.000 abajo). |
 
 ### Identificación
 
@@ -141,6 +142,7 @@ estado (no se edita a mano).
 | Columna | Tipo | Notas |
 |---|---|---|
 | `Solicitud` | Búsqueda (Lookup) → `Solicitudes` | A qué solicitud pertenece. |
+| `Organizacion` | Una línea de texto | `organization_id`. Multi-tenant-ready, igual que `SubmissionStatusHistory`. |
 | `EstadoAnterior` | Elección | `from_status`. Mismas 5 opciones de `Estado`. |
 | `EstadoNuevo` | Elección | `to_status`. |
 | `CambiadoPor` | Persona o grupo | `changed_by`. |
@@ -162,4 +164,18 @@ estado (no se edita a mano).
 - **Cálculo de `CorrienteNominal`:** no se calcula en SharePoint; se hace en la
   app con Power Fx (fórmula en la guía de Power Apps).
 - **Permisos:** ver matriz de roles en el ADR. Se implementan como permisos de
-  lista SharePoint (grupos: Administradores, Gestores, Lectores).
+  lista SharePoint (grupos: Administradores, Gestores, Lectores). **Limitación:**
+  los permisos de lista son gruesos y NO replican el detalle por acción/rol de las
+  policies originales (p. ej. "solo super_admin reabre"). Esa granularidad, de
+  necesitarse, debe ir en los flujos Power Automate (ver A-3 de la revisión).
+- **Umbral de 5.000 ítems (list view threshold):** `SolicitudTableros` crece N por
+  solicitud y puede superar el umbral. Indexar la columna Lookup `Solicitud` y
+  cualquier columna usada para filtrar/ordenar en vistas. Sin índice, las vistas y
+  consultas fallan pasado ese límite.
+- **Adjuntos sin tag semántico:** los adjuntos nativos de SharePoint son una lista
+  plana sin categoría; el sistema original etiquetaba cada archivo
+  (`technical_specs`, `site_photo`, `load_list`, `unilineal_diagram`,
+  `mechanical_plans`) y los agrupaba. **Decisión pendiente:** (a) usar adjuntos
+  nativos con convención de nombres, o (b) una **biblioteca de documentos** con una
+  columna de metadato `TipoArchivo` + Lookup a la solicitud/tablero, que conserva
+  la categoría a costa de más complejidad.

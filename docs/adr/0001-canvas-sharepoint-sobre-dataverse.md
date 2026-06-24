@@ -25,7 +25,10 @@ Características clave a preservar:
 - **Patrón multi-tablero:** N tableros por solicitud, agregados dinámicamente.
 - Lógica condicional (mostrar/ocultar campos según respuestas).
 - Cálculo automático de corriente nominal.
-- Máquina de estados auditada (`nueva → en_revision → cotizada → aprobada/rechazada`).
+- Máquina de estados auditada y gateada por rol (transiciones reales en
+  `docs/powerautomate/03-flujos.md` F-2; incluye rechazo directo desde cualquier
+  estado no terminal, retroceso `cotizada → en_revision`, y reapertura de
+  terminales a `nueva` solo por `super_admin`).
 - Adjuntos por solicitud y por tablero.
 
 ## Decisión
@@ -53,6 +56,21 @@ dueño del producto, 2026-06-24.)
 - **RichEditor → columnas de texto enriquecido** de SharePoint; se conserva el
   formato de `board_function` y `loads_to_feed`.
 - **`reference_code`** lo genera Power Automate al crear la cabecera.
+
+### Matriz de permisos (verificada contra `SubmissionRequestPolicy` y `SubmissionStateMachine`)
+
+| Rol | Ver / Exportar | Avanzar estado | Rechazar | Reabrir (terminal→nueva) | Asignar | Borrar adjuntos |
+|---|---|---|---|---|---|---|
+| `super_admin` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `supervisor` | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ (si es el asignado) |
+| `ingeniero` | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ |
+| `calidad` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `tecnico` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+> Corrige una versión previa de esta matriz: `calidad` **no** cambia estados (solo
+> ve/exporta) y reabrir es **solo** `super_admin`. SharePoint solo ofrece permisos
+> de lista gruesos; replicar este detalle por rol/acción es una limitación abierta
+> (ver Consecuencias y la decisión A-3 de la revisión).
 
 ## Alternativas descartadas
 

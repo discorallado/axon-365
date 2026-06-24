@@ -219,6 +219,7 @@ Set(varSolicitud,
         // Title (reference_code) lo completa Power Automate; dejar provisional
         Title: "PENDIENTE",
         Estado: {Value: "nueva"},
+        EstadoPrevio: {Value: "nueva"},   // necesario para F-2 (ver revisión A-2)
         NombreProyecto: txtNombreProyecto.Text,
         UbicacionInstalacion: txtUbicacion.Text,
         CentroCosto: txtCentroCosto.Text,
