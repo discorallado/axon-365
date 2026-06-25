@@ -56,9 +56,8 @@ original queda congelado como proyecto personal y NO se toca.
 
 ### Pendiente ⏳
 - [ ] **Confirmar Dataverse completo vs. for Teams** (bloquea BPF/security roles).
-- [ ] Reescribir el esquema como `docs/dataverse/01-tablas.md` (tablas, relación 1:N,
-      Choices, Autonumber, auditoría) — usar `sharepoint/01-listas-esquema.md` como
-      referencia de campos.
+- [x] Esquema reescrito: `docs/dataverse/01-tablas.md` (tablas, relación 1:N Parental,
+      Choices/multi-select, Autonumber, auditoría, adjuntos como columnas File). ✅
 - [ ] Reescribir F-2 como Business Process Flow + matriz de security roles.
 - [ ] Reescribir la gestión interna como app Model-driven.
 - [ ] Completar el YAML de los ~37 campos del tablero (`05`).
@@ -67,10 +66,12 @@ original queda congelado como proyecto personal y NO se toca.
 
 ## Próximo paso concreto
 Confirmar en make.powerapps.com que el entorno tiene **Dataverse completo** (ver
-Roles de seguridad y Flujos de proceso de negocio). Con eso confirmado, reescribir
-`docs/dataverse/01-tablas.md` definiendo las tablas `Solicitud` y `SolicitudTablero`
-(relación 1:N, Choices reutilizables, `reference_code` Autonumber, auditoría ON,
-`organization_id` por tabla), tomando los campos de `sharepoint/01-listas-esquema.md`.
+Roles de seguridad y Flujos de proceso de negocio). Con eso, escribir
+`docs/dataverse/02-bpf-y-roles.md`: el Business Process Flow de la máquina de estados
+(transiciones reales: nueva→en_revision/rechazada; en_revision→cotizada/rechazada;
+cotizada→aprobada/rechazada/en_revision; reapertura terminal→nueva solo super_admin)
+y la matriz de security roles (super_admin, supervisor, ingeniero, calidad, tecnico)
+por tabla/acción. El esquema de tablas ya está en `docs/dataverse/01-tablas.md`.
 
 ## Notas de logística
 - Continuable en claude.ai pegando este SESSION.md + README. Construcción 100% en navegador.
