@@ -1,3 +1,11 @@
+> ⚠️ **Actualizar a Dataverse ([ADR 0002](../adr/0002-pivote-a-dataverse.md)).**
+> La estructura de la app Canvas (pantallas, galería multi-tablero, lógica
+> condicional, cálculo de corriente) **se mantiene**, pero el origen de datos pasa
+> de SharePoint a **Dataverse**: el conector y las tablas `Solicitudes`/
+> `SolicitudTableros`, la sintaxis de Choice `'Columna (Tabla)'.Opcion`, el lookup
+> seteado con el **registro** padre, y **sin `EstadoPrevio`**. El YAML ya enlazado a
+> Dataverse está en [05-canvas-yaml-captura.md](05-canvas-yaml-captura.md).
+
 # Guía de construcción — Power App Canvas de captura
 
 App que reemplaza al `PublicFormWizard` de Filament. Tres pantallas, una galería

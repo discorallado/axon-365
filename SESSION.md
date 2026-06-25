@@ -6,7 +6,7 @@
 ---
 
 ## Última actualización
-2026-06-24
+2026-06-25
 
 ## Qué es esto
 Migración del **Módulo de Solicitudes de Tableros Eléctricos** desde el PMIS
@@ -14,13 +14,18 @@ Laravel/Filament (repo `axon`) a Microsoft 365. Motivo: la empresa no quiere
 costear mantenimiento de app a medida; usa M365 que ya paga. El repo `axon`
 original queda congelado como proyecto personal y NO se toca.
 
-## Arquitectura aprobada
-- **Captura y gestión:** Power Apps Canvas (conectores estándar → incluido en M365).
-- **Datos:** SharePoint Lists (`Solicitudes`, `SolicitudTableros`, `HistorialEstados`).
-- **Automatización:** Power Automate (notificaciones + máquina de estados).
-- Decisiones cerradas: Choice múltiple nativo (opción A); usuarios internos con
-  cuenta MS (sin acceso anónimo); `raw_data` JSON descartado; RichEditor → texto
-  enriquecido SharePoint. Detalle en `docs/adr/0001-...md`.
+## Arquitectura aprobada — PIVOTE A DATAVERSE (2026-06-25, ADR 0002 supersede 0001)
+- **Datos:** **Dataverse** — tablas `Solicitud`, `SolicitudTablero` (relación 1:N).
+  Ya NO SharePoint.
+- **Captura:** Power Apps Canvas reapuntada a Dataverse (YAML en `docs/powerapps/05`).
+- **Estados:** Business Process Flow + security roles (nativos) — reemplazan F-2.
+- **Automatización:** Power Automate F-1 (notificaciones + acuse).
+- **Gestión:** app Model-driven.
+- **Requiere Dataverse completo** (NO Dataverse for Teams) — verificar en
+  make.powerapps.com (Entorno / Roles de seguridad / BPF). Si fuera Teams, reevaluar.
+- Decisiones que se conservan: usuarios internos con cuenta MS; `bifasico` eliminado
+  (B-1); modelo ancho (no EAV). Dataverse resuelve A-3/A-4 (roles), M-2 (umbral 5000),
+  M-3 (Autonumber), HistorialEstados (auditoría nativa), EstadoPrevio (lo hace el BPF).
 
 ## Estado actual
 
@@ -41,24 +46,33 @@ original queda congelado como proyecto personal y NO se toca.
   (gatea rechazar/reabrir, rol vía grupo AAD o lista RolesUsuarios); M-1 → adjuntos
   nativos planos + convención de nombres; B-1 → eliminado `bifasico` en M365.
 
-### Pendiente ⏳ (construcción real en el navegador, la hace el usuario)
-- [ ] Crear las 3 listas SharePoint según el esquema.
-- [ ] Construir la Power App Canvas de captura.
-- [ ] Crear los flujos Power Automate.
-- [ ] Construir la app/vista de gestión interna (bandeja) — guía ya escrita (`04`).
-- [ ] Subir este repo a GitHub.
-- [x] Resolver las 3 decisiones abiertas de la revisión (A-3, M-1, B-1). ✅
+### Pivote a Dataverse — hecho esta sesión (2026-06-25)
+- `docs/adr/0002-pivote-a-dataverse.md` creado (supersede 0001).
+- `docs/powerapps/05-canvas-yaml-captura.md` — YAML `.pa.yaml` de la pantalla de
+  captura, enlazado a Dataverse (Patch a tablas, Choice `'Col (Tabla)'.Opcion`,
+  lookup por registro).
+- Banners de "superseded/actualizar a Dataverse" en los 4 docs de SharePoint/Canvas.
+- README y SESSION actualizados al nuevo rumbo.
+
+### Pendiente ⏳
+- [ ] **Confirmar Dataverse completo vs. for Teams** (bloquea BPF/security roles).
+- [ ] Reescribir el esquema como `docs/dataverse/01-tablas.md` (tablas, relación 1:N,
+      Choices, Autonumber, auditoría) — usar `sharepoint/01-listas-esquema.md` como
+      referencia de campos.
+- [ ] Reescribir F-2 como Business Process Flow + matriz de security roles.
+- [ ] Reescribir la gestión interna como app Model-driven.
+- [ ] Completar el YAML de los ~37 campos del tablero (`05`).
+- [ ] Construir en M365: tablas → Canvas → BPF → F-1 → model-driven.
+- [x] Repo en GitHub: `discorallado/axon-365` (privado). ✅
 
 ## Próximo paso concreto
-Crear las 3 listas en SharePoint siguiendo `docs/sharepoint/01-listas-esquema.md`,
-empezando por `Solicitudes` (incluir columna oculta `EstadoPrevio` por defecto
-`nueva`), luego `SolicitudTableros` (con la columna Lookup `Solicitud` →
-`Solicitudes`, **indexada**), luego `HistorialEstados` (con `Organizacion`).
-Verificar que los valores internos de cada columna Choice coincidan con los
-códigos del esquema.
+Confirmar en make.powerapps.com que el entorno tiene **Dataverse completo** (ver
+Roles de seguridad y Flujos de proceso de negocio). Con eso confirmado, reescribir
+`docs/dataverse/01-tablas.md` definiendo las tablas `Solicitud` y `SolicitudTablero`
+(relación 1:N, Choices reutilizables, `reference_code` Autonumber, auditoría ON,
+`organization_id` por tabla), tomando los campos de `sharepoint/01-listas-esquema.md`.
 
 ## Notas de logística
-- Trabajo futuro sin código local: se puede continuar en claude.ai pegando este
-  SESSION.md + README. La construcción M365 es 100% en el navegador.
-- Repo aún no está en GitHub; crear desde github.com o GitHub Desktop en Windows.
-- Ruta local actual del repo: `\\wsl.localhost\ddev\home\ubuntu\axon-365`.
+- Continuable en claude.ai pegando este SESSION.md + README. Construcción 100% en navegador.
+- Repo en GitHub: https://github.com/discorallado/axon-365 (privado). Remote `origin` configurado.
+- Ruta local: `\\wsl.localhost\ddev\home\ubuntu\axon-365` (rama `main`).

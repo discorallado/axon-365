@@ -1,3 +1,10 @@
+> ⚠️ **Parcialmente superseded por Dataverse ([ADR 0002](../adr/0002-pivote-a-dataverse.md)).**
+> **F-1 (notificaciones + acuse)** sigue válido (ahora disparado por *fila creada*
+> en la tabla Dataverse; el código de referencia lo da una columna **Autonumber**,
+> ya no `guid()`). **F-2 (máquina de estados) se reemplaza por un Business Process
+> Flow + security roles**, eliminando el workaround `EstadoPrevio`/anti-bucle.
+> Pendiente: reescribir F-2 como BPF en `dataverse/`.
+
 # Flujos de Power Automate
 
 Reproducen las notificaciones y la máquina de estados del sistema original.

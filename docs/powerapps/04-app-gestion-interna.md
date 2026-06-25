@@ -1,3 +1,10 @@
+> ⚠️ **Reorientar a Model-driven sobre Dataverse ([ADR 0002](../adr/0002-pivote-a-dataverse.md)).**
+> Con Dataverse, la bandeja interna conviene construirla como **app Model-driven**
+> (vistas, formularios y subgrids casi automáticos) en vez de una Canvas hecha a
+> mano. El gating de estados/roles deja de implementarse en la app: lo hacen el
+> **Business Process Flow** y los **security roles**. Esta guía Canvas queda como
+> alternativa/segundo plano. Pendiente: reescribir como model-driven.
+
 # Guía de construcción — App de gestión interna (bandeja)
 
 Reemplaza el `SubmissionRequestResource` de Filament: la bandeja donde el equipo

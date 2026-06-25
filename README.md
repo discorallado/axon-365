@@ -16,43 +16,54 @@ Power Platform.
 > El repo `axon` original **no se toca**: queda congelado como proyecto personal.
 > Esta migración vive aparte, aquí.
 
-## Arquitectura elegida
+## Arquitectura (actual — Dataverse)
 
 ```
-Captura:        Power Apps Canvas (conectores estándar → incluido en M365)
-Datos:          SharePoint Lists (Solicitudes, SolicitudTableros, HistorialEstados)
-Automatización: Power Automate (notificaciones + máquina de estados)
-Gestión:        Power Apps Canvas (bandeja) + vistas de lista SharePoint
+Captura:        Power Apps Canvas (reapuntada a Dataverse)
+Datos:          Dataverse — tablas Solicitud, SolicitudTablero (relación 1:N)
+Estados:        Business Process Flow + security roles (nativos)
+Automatización: Power Automate (notificaciones + acuse)
+Gestión:        App Model-driven (vistas, formularios, subgrids)
 ```
 
-**Clave de licenciamiento:** una Power App Canvas que usa solo conectores
-estándar (SharePoint, Outlook, Teams) está **incluida en la licencia M365** — no
-requiere Power Apps premium ni Dataverse. Por eso esta combinación da costo cero
-y, a la vez, conserva el patrón multi-tablero del formulario original.
+> **Pivote a Dataverse** (ver [docs/adr/0002-pivote-a-dataverse.md](docs/adr/0002-pivote-a-dataverse.md),
+> supersede al 0001). El diseño previo sobre **SharePoint Lists** se eligió cuando
+> se creía que Dataverse no estaba disponible; al confirmarse el acceso a Dataverse
+> y sin nada construido aún, se pivotó. Dataverse elimina los workarounds de
+> SharePoint (máquina de estados a mano, `EstadoPrevio`, umbral de 5.000) con
+> auditoría y RBAC nativos. **Requiere Dataverse completo** (no Dataverse for Teams).
 
-Ver el detalle y las alternativas descartadas (Dataverse, Microsoft Forms,
-Power Pages, Excel) en [docs/adr/0001-canvas-sharepoint-sobre-dataverse.md](docs/adr/0001-canvas-sharepoint-sobre-dataverse.md).
+Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-dataverse.md)
+(SharePoint, superseded) → [ADR 0002](docs/adr/0002-pivote-a-dataverse.md) (Dataverse).
 
 ## Cómo está organizado
 
 | Carpeta | Contenido |
 |---|---|
-| `docs/adr/` | Decisiones de arquitectura (por qué Canvas+SharePoint) |
-| `docs/sharepoint/` | Esquema de las 3 listas: columnas, tipos, opciones de choice |
-| `docs/powerapps/` | Guías de las Power Apps Canvas: `02` captura, `04` gestión interna |
-| `docs/powerautomate/` | Definición de los flujos (notificaciones, estados) |
+| `docs/adr/` | Decisiones: `0001` SharePoint (superseded), `0002` pivote a Dataverse |
+| `docs/sharepoint/` | ⚠️ Superseded — esquema de columnas/choices, útil solo como referencia del modelo |
+| `docs/powerapps/` | `02` captura Canvas (rebind a Dataverse), `04` gestión, `05` YAML de captura (Dataverse) |
+| `docs/powerautomate/` | Flujos: F-1 vigente; F-2 → reemplazado por Business Process Flow |
 
-## Orden de construcción recomendado
+## Orden de construcción recomendado (Dataverse)
 
-1. **SharePoint** — crear las 3 listas según [docs/sharepoint/01-listas-esquema.md](docs/sharepoint/01-listas-esquema.md).
-2. **Power Apps** — construir la app de captura siguiendo [docs/powerapps/02-canvas-guia-construccion.md](docs/powerapps/02-canvas-guia-construccion.md).
-3. **Power Automate** — crear los flujos de [docs/powerautomate/03-flujos.md](docs/powerautomate/03-flujos.md).
-4. **Gestión interna** — app de bandeja + vistas de lista, según [docs/powerapps/04-app-gestion-interna.md](docs/powerapps/04-app-gestion-interna.md).
+1. **Confirmar Dataverse completo** (no Teams): Entorno / Roles de seguridad / BPF.
+2. **Tablas Dataverse** — `Solicitud`, `SolicitudTablero` (relación 1:N), Choices,
+   `reference_code` como Autonumber, auditoría activada. (Doc por reescribir desde
+   `docs/sharepoint/01-listas-esquema.md`, que sirve de referencia de campos.)
+3. **App Canvas de captura** — [docs/powerapps/05-canvas-yaml-captura.md](docs/powerapps/05-canvas-yaml-captura.md)
+   (YAML enlazado a Dataverse) + [02](docs/powerapps/02-canvas-guia-construccion.md) (estructura).
+4. **Business Process Flow** — máquina de estados + security roles por rol.
+5. **Power Automate** — F-1 (notificaciones + acuse) de [docs/powerautomate/03-flujos.md](docs/powerautomate/03-flujos.md).
+6. **App Model-driven** de gestión interna.
 
 ## Estado
 
-- [x] Arquitectura aprobada (Canvas + SharePoint, opción A: Choice múltiple nativo)
-- [ ] Listas SharePoint creadas
-- [ ] Power App Canvas de captura
-- [ ] Flujos Power Automate
-- [ ] App de gestión interna
+- [x] Arquitectura: pivote a **Dataverse** (ADR 0002, supersede 0001)
+- [x] YAML de captura enlazado a Dataverse (`05`)
+- [ ] Tablas Dataverse creadas
+- [ ] App Canvas de captura
+- [ ] Business Process Flow + security roles
+- [ ] Power Automate F-1
+- [ ] App Model-driven de gestión
+- [ ] Reescritura completa de docs a `docs/dataverse/` (schema + BPF + model-driven)

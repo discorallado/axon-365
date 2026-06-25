@@ -1,3 +1,10 @@
+> ⚠️ **SUPERSEDED por el pivote a Dataverse ([ADR 0002](../adr/0002-pivote-a-dataverse.md)).**
+> El backend ya NO es SharePoint. Este esquema de columnas/choices sigue siendo
+> útil como **referencia del modelo de datos** (los campos y opciones son los
+> mismos), pero las "listas" pasan a ser **tablas Dataverse**, los Lookup a
+> **relaciones 1:N nativas**, `HistorialEstados` a **auditoría nativa**, y
+> `EstadoPrevio` se elimina. Pendiente: reescribir como `dataverse/01-tablas.md`.
+
 # Esquema de listas SharePoint
 
 Tres listas reproducen el modelo relacional del sistema original:
