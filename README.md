@@ -40,6 +40,7 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 
 | Carpeta | Contenido |
 |---|---|
+| `docs/instrucciones-proyecto.md` | Instrucciones persistentes para Cowork/Claude (decisiones firmes, método, qué no hacer) |
 | `docs/adr/` | Decisiones: `0001` SharePoint (superseded), `0002` pivote a Dataverse |
 | `docs/dataverse/` | **Vigente** — `01` tablas, `02` BPF + security roles, `03` Plan Developer y despliegue a producción |
 | `docs/sharepoint/` | ⚠️ Superseded — esquema de columnas/choices, útil solo como referencia del modelo |
