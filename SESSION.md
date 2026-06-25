@@ -21,8 +21,10 @@ original queda congelado como proyecto personal y NO se toca.
 - **Estados:** Business Process Flow + security roles (nativos) — reemplazan F-2.
 - **Automatización:** Power Automate F-1 (notificaciones + acuse).
 - **Gestión:** app Model-driven.
-- **Requiere Dataverse completo** (NO Dataverse for Teams) — verificar en
-  make.powerapps.com (Entorno / Roles de seguridad / BPF). Si fuera Teams, reevaluar.
+- **Confirmado: Dataverse completo vía Plan Developer.** Sirve para construir/validar.
+  ⚠️ Developer = dev, 1 usuario, NO producción. Para pasar a la licencia de la empresa
+  sin retrabajo: construir TODO dentro de una **Solución** y luego exportar managed →
+  importar en el entorno productivo. Detalle en `docs/dataverse/03-...md`.
 - Decisiones que se conservan: usuarios internos con cuenta MS; `bifasico` eliminado
   (B-1); modelo ancho (no EAV). Dataverse resuelve A-3/A-4 (roles), M-2 (umbral 5000),
   M-3 (Autonumber), HistorialEstados (auditoría nativa), EstadoPrevio (lo hace el BPF).
@@ -55,23 +57,26 @@ original queda congelado como proyecto personal y NO se toca.
 - README y SESSION actualizados al nuevo rumbo.
 
 ### Pendiente ⏳
-- [ ] **Confirmar Dataverse completo vs. for Teams** (bloquea BPF/security roles).
-- [x] Esquema reescrito: `docs/dataverse/01-tablas.md` (tablas, relación 1:N Parental,
-      Choices/multi-select, Autonumber, auditoría, adjuntos como columnas File). ✅
-- [ ] Reescribir F-2 como Business Process Flow + matriz de security roles.
+- [x] Confirmado Dataverse completo (Plan Developer). ✅
+- [x] Esquema reescrito: `docs/dataverse/01-tablas.md`. ✅
+- [x] Estados reescritos: `docs/dataverse/02-bpf-y-roles.md` (flujo real-time de
+      transiciones + matriz de security roles + BPF opcional). ✅
+- [x] Plan Developer y despliegue: `docs/dataverse/03-plan-developer-y-despliegue.md`. ✅
+- [ ] Reescribir la gestión interna como app Model-driven (`docs/dataverse/04-...`).
+- [ ] Completar el YAML de los ~37 campos del tablero (`docs/powerapps/05`).
 - [ ] Reescribir la gestión interna como app Model-driven.
 - [ ] Completar el YAML de los ~37 campos del tablero (`05`).
 - [ ] Construir en M365: tablas → Canvas → BPF → F-1 → model-driven.
 - [x] Repo en GitHub: `discorallado/axon-365` (privado). ✅
 
 ## Próximo paso concreto
-Confirmar en make.powerapps.com que el entorno tiene **Dataverse completo** (ver
-Roles de seguridad y Flujos de proceso de negocio). Con eso, escribir
-`docs/dataverse/02-bpf-y-roles.md`: el Business Process Flow de la máquina de estados
-(transiciones reales: nueva→en_revision/rechazada; en_revision→cotizada/rechazada;
-cotizada→aprobada/rechazada/en_revision; reapertura terminal→nueva solo super_admin)
-y la matriz de security roles (super_admin, supervisor, ingeniero, calidad, tecnico)
-por tabla/acción. El esquema de tablas ya está en `docs/dataverse/01-tablas.md`.
+Dos opciones en paralelo:
+(a) **Documentar** la app Model-driven de gestión interna como
+`docs/dataverse/04-app-model-driven.md` (vistas por estado, formulario principal con
+subgrid 1:N de tableros, panel de adjuntos, acciones de estado que disparan el flujo
+real-time de `02-bpf-y-roles.md`).
+(b) **Empezar a construir en make.powerapps.com:** crear la Solución `Axon Solicitudes`
+(publisher + prefijo) y dentro las tablas según `docs/dataverse/01-tablas.md`.
 
 ## Notas de logística
 - Continuable en claude.ai pegando este SESSION.md + README. Construcción 100% en navegador.
