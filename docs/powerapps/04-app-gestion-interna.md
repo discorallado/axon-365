@@ -14,6 +14,9 @@ comenta.
 > **Licencia:** solo conector **SharePoint** (estándar) → incluido en M365.
 > **Quién entra:** usuarios internos con cuenta MS, según roles del ADR.
 
+> **Notación Power Fx:** separador decimal `,` en el entorno → argumentos de
+> función con `;`, encadenado de instrucciones con `;;`.
+
 ## Decisión de formato: Canvas vs. vistas de lista
 
 | Enfoque | Cuándo conviene |
@@ -32,11 +35,11 @@ reportes rápidos.
   ```powerfx
   SortByColumns(
       Filter(
-          Solicitudes,
+          Solicitudes;
           // filtro por estado seleccionado (o todos)
           (ddFiltroEstado.Selected.Value = "todos") || (Estado.Value = ddFiltroEstado.Selected.Value)
-      ),
-      "EnviadoEl", SortOrder.Descending
+      );
+      "EnviadoEl"; SortOrder.Descending
   )
   ```
 - Cada fila: `Title` (código), `NombreProyecto`, `EmpresaCliente`, chip de
@@ -44,18 +47,18 @@ reportes rápidos.
 - **Chip de estado con color** (reproduce los colores del enum original) —
   `Fill`/`Color` del control:
   ```powerfx
-  Switch(ThisItem.Estado.Value,
-      "nueva",       RGBA(59,130,246,1),   // info / azul
-      "en_revision", RGBA(245,158,11,1),   // warning / ámbar
-      "cotizada",    RGBA(99,102,241,1),   // primary / índigo
-      "aprobada",    RGBA(34,197,94,1),    // success / verde
-      "rechazada",   RGBA(239,68,68,1),    // danger / rojo
-      RGBA(120,120,120,1)
+  Switch(ThisItem.Estado.Value;
+      "nueva";       RGBA(59;130;246;1);   // info / azul
+      "en_revision"; RGBA(245;158;11;1);   // warning / ámbar
+      "cotizada";    RGBA(99;102;241;1);   // primary / índigo
+      "aprobada";    RGBA(34;197;94;1);    // success / verde
+      "rechazada";   RGBA(239;68;68;1);    // danger / rojo
+      RGBA(120;120;120;1)
   )
   ```
 - **Barra de filtros**: Dropdown `ddFiltroEstado` (todos + 5 estados), caja de
   búsqueda por `NombreProyecto`/`Title`/`EmpresaCliente`, filtro por `Asignado`.
-- Al seleccionar una fila: `Set(varSolSel, ThisItem); Navigate(scrDetalle)`.
+- Al seleccionar una fila: `Set(varSolSel; ThisItem);; Navigate(scrDetalle)`.
 
 > **Delegación:** `Filter`/`SortByColumns` sobre columnas Choice y Texto son
 > delegables en SharePoint. Evitar `Search()` sobre muchos campos y funciones no
@@ -74,26 +77,26 @@ fecha deseada, ingeniería por, observaciones, asignado, estado actual.
 ### 2.2 Tableros de la solicitud
 - **Galería** `galTablerosDet`, `Items`:
   ```powerfx
-  Filter(SolicitudTableros, Solicitud.Id = varSolSel.ID)
+  Filter(SolicitudTableros; Solicitud.Id = varSolSel.ID)
   ```
   (La columna Lookup `Solicitud` debe estar **indexada** — ver esquema.)
 - Mostrar por tablero: `Title`, tipo (traducir código→etiqueta), cantidad,
   parámetros eléctricos clave, IP/IK, y un sub-detalle expandible con el resto.
 - **Traducción código→etiqueta** (los Choice guardan el código corto):
   ```powerfx
-  Switch(ThisItem.TipoTablero.Value,
-      "fuerza", "Fuerza / Potencia",
-      "alumbrado", "Alumbrado / Distribución BT",
-      "control", "Control / Automatización",
-      "transfer", "Transferencia (ATS/MTS)",
-      "sincronizacion", "Sincronización de Generadores",
-      "remoto", "Distribución Remoto",
-      "pfcs", "Factor de Potencia",
-      "medicion", "Medición / Centro de Carga",
-      "variadores", "Variadores de Frecuencia",
-      "arrancadores", "Arrancadores Suaves",
-      "ups", "UPS / Respaldo",
-      "otro", Coalesce(ThisItem.OtroTipoTablero, "Otro"),
+  Switch(ThisItem.TipoTablero.Value;
+      "fuerza"; "Fuerza / Potencia";
+      "alumbrado"; "Alumbrado / Distribución BT";
+      "control"; "Control / Automatización";
+      "transfer"; "Transferencia (ATS/MTS)";
+      "sincronizacion"; "Sincronización de Generadores";
+      "remoto"; "Distribución Remoto";
+      "pfcs"; "Factor de Potencia";
+      "medicion"; "Medición / Centro de Carga";
+      "variadores"; "Variadores de Frecuencia";
+      "arrancadores"; "Arrancadores Suaves";
+      "ups"; "UPS / Respaldo";
+      "otro"; Coalesce(ThisItem.OtroTipoTablero; "Otro");
       ThisItem.TipoTablero.Value
   )
   ```
@@ -120,8 +123,8 @@ SharePoint no expone roles de negocio directamente. Definir una lista
 `RolesUsuarios` (`Usuario` Persona, `Rol` Choice) y resolver:
 ```powerfx
 // App.OnStart
-Set(varRol,
-    LookUp(RolesUsuarios, Usuario.Email = User().Email, Rol.Value)
+Set(varRol;
+    LookUp(RolesUsuarios; Usuario.Email = User().Email; Rol.Value)
 )
 ```
 > Alternativa: usar grupos de SharePoint/Azure AD y `Office365Groups`. Decidir
@@ -130,14 +133,14 @@ Set(varRol,
 ### 3.2 Estados siguientes permitidos
 ```powerfx
 // colАcciones: estados a los que se puede pasar desde el actual
-With({s: varSolSel.Estado.Value},
-    Switch(s,
-        "nueva",       ["en_revision","rechazada"],
-        "en_revision", ["cotizada","rechazada"],
-        "cotizada",    ["aprobada","rechazada","en_revision"],
+With({s: varSolSel.Estado.Value};
+    Switch(s;
+        "nueva";       ["en_revision";"rechazada"];
+        "en_revision"; ["cotizada";"rechazada"];
+        "cotizada";    ["aprobada";"rechazada";"en_revision"];
         // terminales: solo reapertura
-        "aprobada",    ["nueva"],
-        "rechazada",   ["nueva"],
+        "aprobada";    ["nueva"];
+        "rechazada";   ["nueva"];
         []
     )
 )
@@ -146,12 +149,12 @@ With({s: varSolSel.Estado.Value},
 ### 3.3 Gating por rol (antes de mostrar/permitir cada botón)
 ```powerfx
 // ¿Puede el usuario hacer ESTA transición?
-With({destino: thisDestino},   // p.ej. "rechazada"
-    Switch(destino,
-        "rechazada", varRol in ["super_admin","supervisor"],
-        "nueva",     varRol = "super_admin",                       // reapertura
+With({destino: thisDestino};   // p.ej. "rechazada"
+    Switch(destino;
+        "rechazada"; varRol in ["super_admin";"supervisor"];
+        "nueva";     varRol = "super_admin";                       // reapertura
         // avanzar (en_revision/cotizada/aprobada)
-        varRol in ["super_admin","ingeniero","supervisor"]
+        varRol in ["super_admin";"ingeniero";"supervisor"]
     )
 )
 ```
@@ -161,12 +164,12 @@ El botón **solo** cambia `Estado`; **F-2 valida y audita** (no dupliques la
 lógica en la app). Pedir comentario antes:
 ```powerfx
 // OnSelect del botón de transición
-Patch(Solicitudes, varSolSel, {
-    Estado: {Value: thisDestino},
+Patch(Solicitudes; varSolSel; {
+    Estado: {Value: thisDestino};
     Comentario: txtComentarioTransicion.Text   // si guardas el comentario en la solicitud
-});
-Set(varSolSel, LookUp(Solicitudes, ID = varSolSel.ID));  // refrescar
-Notify("Estado actualizado.", NotificationType.Success)
+});;
+Set(varSolSel; LookUp(Solicitudes; ID = varSolSel.ID));;  // refrescar
+Notify("Estado actualizado."; NotificationType.Success)
 ```
 > Importante: la validación dura vive en **F-2** (servidor), no en la app. La app
 > solo evita ofrecer transiciones inválidas para UX. Si la app y F-2 difieren,
@@ -174,9 +177,9 @@ Notify("Estado actualizado.", NotificationType.Success)
 
 ### 3.5 Asignar responsable
 ```powerfx
-Patch(Solicitudes, varSolSel, {Asignado: pickerAsignado.Selected})
+Patch(Solicitudes; varSolSel; {Asignado: pickerAsignado.Selected})
 ```
-Solo visible si `varRol in ["super_admin","ingeniero","supervisor"]` (policy `assign`).
+Solo visible si `varRol in ["super_admin";"ingeniero";"supervisor"]` (policy `assign`).
 
 ---
 
