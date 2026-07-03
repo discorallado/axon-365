@@ -6,7 +6,7 @@
 ---
 
 ## Última actualización
-2026-07-01 (Arquitectura final del wizard Canvas: 4 pantallas por pestañas + maestro-detalle)
+2026-07-01 (Migración a controles Modern de Power Apps en el wizard Canvas)
 
 ## Qué es esto
 Migración del **Módulo de Solicitudes de Tableros Eléctricos** desde el PMIS
@@ -17,10 +17,14 @@ original queda congelado como proyecto personal y NO se toca.
 ## Arquitectura aprobada — PIVOTE A DATAVERSE (2026-06-25, ADR 0002 supersede 0001)
 - **Datos:** **Dataverse** — tablas `Solicitud`, `SolicitudTablero` (relación 1:N).
   Ya NO SharePoint.
-- **Captura:** Power Apps Canvas reapuntada a Dataverse (YAML en `docs/powerapps/05`).
+- **Captura:** Power Apps Canvas reapuntada a Dataverse (YAML en `docs/powerapps/05`),
+  construida con **controles Modern** (Fluent) — `ModernButton`,
+  `ModernTextInput`, `ModernNumberInput`, `ModernDropdown`, `ModernCombobox`,
+  `ModernToggle`, `ModernDatePicker`, `ModernText`, `ModernTabList`.
+  `Group`/`Gallery` siguen clásicos (no tienen versión Modern).
   **Arquitectura final de pantallas** (mockup del usuario, confirmado):
   `scrContactoProyecto` / `scrTableroForm` / `scrDocumentacion` navegadas por
-  una **barra de pestañas compartida** (salto directo, sin bloqueo) + botón
+  un `ModernTabList` compartido (salto directo, sin bloqueo) + botón
   **Siguiente** por pantalla (valida y avanza en orden) + `scrConfirmacion`
   fuera del flujo de pestañas. `scrTableroForm` es maestro-detalle en una
   sola pantalla (galería izquierda + formulario completo derecha,
@@ -102,10 +106,24 @@ original queda congelado como proyecto personal y NO se toca.
       eliminar con confirmación, indicador de modo nuevo/editando, y la sección
       "Qué más podrías necesitar" (mejoras opcionales + riesgo de colTableros
       solo en memoria). ✅
+- [x] **Migración a controles Modern (esta sesión):** los 3 docs activos del wizard
+      Canvas (`dataverse/05`, `powerapps/02`, `powerapps/05`) reescritos para usar
+      `Modern<Control>@1.0.0` en vez de los controles clásicos. Verificado contra
+      Microsoft Learn antes de escribir (no por memoria). Cambios de fondo, no solo
+      de nombre: campos numéricos → `ModernNumberInput` (`.Value` ya numérico, `Min`/
+      `Max` nativos reemplazan `Clamp`); `Toggle.Value`→`Toggle.Checked`; `Default`
+      de `ModernDropdown` ahora necesita el record completo → se resuelve con
+      `LookUp` contra colecciones `colOpc*` (nuevas, en `App.OnStart`, ~17, una por
+      Choice) en vez de los `Switch` gigantes de antes; barra de pestañas armada a
+      mano reemplazada por el control dedicado `ModernTabList`. `Group`/`Gallery`
+      quedan clásicos (sin versión Modern). `docs/powerapps/04-app-gestion-interna.md`
+      (superseded, SharePoint, fuera del build activo) no se tocó — avisar si se
+      quiere modernizar también. ✅
 - [ ] Construir de verdad en make.powerapps.com: Solución → tablas → choices → roles
       (`00`) → Business Rules → vistas → formularios → app (`04`) → Canvas de captura
-      con pestañas + maestro-detalle (`dataverse/05` + `powerapps/02` + `powerapps/05`)
-      → flujo real-time de estados → Power Automate F-1.
+      con pestañas + maestro-detalle, controles Modern
+      (`dataverse/05` + `powerapps/02` + `powerapps/05`) → flujo real-time de estados
+      → Power Automate F-1.
 - [x] Repo en GitHub: `discorallado/axon-365` (privado). ✅
 
 ## Próximo paso concreto

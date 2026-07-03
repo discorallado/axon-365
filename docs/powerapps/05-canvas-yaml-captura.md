@@ -1,17 +1,43 @@
-# Canvas — código YAML de la pantalla de captura (Dataverse)
+# Canvas — código YAML de la pantalla de captura (Dataverse, Modern controls)
 
 Código fuente `.pa.yaml` de la **Pantalla 1 — Contacto y Proyecto** y de las
-**~37 columnas del tablero** (Pantallas 2 y 3), enlazados a **Dataverse**.
+**~37 columnas del tablero** (Pantallas 2 y 3), enlazados a **Dataverse**, con
+los **controles Modern** de Power Apps (Fluent) en vez de los controles
+clásicos.
+
+## Controles Modern usados — mapeo y diferencias clave
+
+Verificado contra la documentación oficial de Microsoft (ver Fuentes al
+final). Cada control Modern tiene un identificador de tipo distinto en YAML
+(`Control: Modern<Nombre>@1.0.0`) y varias propiedades cambiaron de nombre o
+de comportamiento:
+
+| Clásico | Modern (`Control:` en YAML) | Cambios que importan aquí |
+|---|---|---|
+| `Text` (label) | `ModernText@1.0.0` | Igual (`Text`, `Size`, `Color`, `Visible`). Ahora también soporta `OnSelect` (no lo usamos). |
+| `TextInput` (texto) | `ModernTextInput@1.0.0` | `HintText` → **`Placeholder`**. Multilínea: `Mode: =TextMode.MultiLine` → **`Type: =TextInputType.Multiline`**. El valor se sigue leyendo con `.Text`. |
+| `TextInput` + `Format: =TextFormat.Number` | **`ModernNumberInput@1.0.0`** (control dedicado, no una variante de TextInput) | El valor se lee con **`.Value`** — ya es numérico, no hace falta `Value(control.Text)`. Tiene **`Min`/`Max`** nativos (reemplazan el `Clamp(...)` manual). Usa `HintText` (no `Placeholder`, a diferencia del TextInput — así lo documenta Microsoft, aunque no sea consistente entre controles). |
+| `DropDown` | `ModernDropdown@1.0.0` | `Value: =Label` (truco para mostrar la etiqueta) → **`ItemDisplayText: =ThisItem.Label`**. `Default` ya **no acepta un string plano** — necesita el **record completo** de `Items` que corresponde a la opción (`{Value:"...";Label:"..."}` o el resultado de un `LookUp`). `.Selected.Value` se sigue leyendo igual. |
+| `ComboBox` (multi-select) | `ModernCombobox@1.0.0` | Igual `SelectMultiple`, `DefaultSelectedItems`, `.SelectedItems`. Se agrega **`ItemDisplayText: =ThisItem.Label`** (antes el multiselect mostraba el texto por convención; ahora hay que decirlo explícito). |
+| `Toggle` | `ModernToggle@1.0.0` | `Value` (leer) + `Default` (setear) se **unifican en una sola propiedad: `Checked`**. `Text` → **`Label`**. |
+| `DatePicker` | `ModernDatePicker@1.0.0` | `.SelectedDate` se sigue leyendo igual. |
+| `Button` | `ModernButton@1.0.0` | `Text`, `OnSelect`, `DisplayMode` iguales. **`Fill` ya no existe** para resaltar estado — se usa **`Appearance`** (`ButtonAppearance.Primary/Secondary/Outline/Subtle/Transparent`). |
+| — | **`ModernTabList@1.0.0`** (nuevo) | Reemplaza la barra de pestañas armada a mano con 3 botones — ver [dataverse/05-construir-canvas-captura.md](../dataverse/05-construir-canvas-captura.md) Bloque 14b. |
+
+> **`Group`/contenedor y `Gallery` NO tienen versión Modern** (no están en el
+> catálogo oficial de controles Modern al momento de escribir esto). Se
+> mantienen como controles clásicos — `galTableros` (la galería de tableros
+> del maestro-detalle) y los `Group` de confirmación siguen exactamente igual
+> que antes.
 
 ## Cómo usarlo
 
 Este YAML no se pega directo en cualquier vista del estudio. Tres vías:
 
 1. **Manual en el navegador (recomendada para este proyecto — sin Git ni CLI):**
-   inserta cada control desde el estudio y pega solo la fórmula (lo que va
-   después del `=`) en la propiedad indicada. Guía clic por clic, con las
-   pantallas y botones de navegación que faltan aquí (galería de tableros,
-   Siguiente/Atrás), en
+   inserta cada control desde el estudio (los controles Modern están bajo
+   **Insertar → Modern**) y pega solo la fórmula (lo que va después del `=`)
+   en la propiedad indicada. Guía clic por clic en
    [docs/dataverse/05-construir-canvas-captura.md](../dataverse/05-construir-canvas-captura.md).
 2. **Git integration (para equipos con repo Git ya conectado a la solución):**
    los archivos `Src/*.pa.yaml` son editables y se sincronizan al estudio.
@@ -42,14 +68,151 @@ Este YAML no se pega directo en cualquier vista del estudio. Tres vías:
 
 ## App — colección e inicialización
 
+Además de la colección de tableros, se definen aquí las **colecciones de
+opciones** de cada `ModernDropdown`/`ModernCombobox` (código corto + etiqueta
+en español). Definirlas una sola vez evita repetir el mismo par código/etiqueta
+en `Items` y de nuevo en el `Default` de edición (ver 02-canvas-guia-construccion.md §3.4).
+
 ```yaml
 App:
   Properties:
     OnStart: |
       =Set(varEditIndex; Blank());;
-      ClearCollect(colTableros; [])
-    # Si prefieres, define colTableros como Named Formula en lugar de OnStart.
+      ClearCollect(colTableros; []);;
+
+      ClearCollect(colOpcIngenieriaPor; Table(
+        {Value:"csenergy"; Label:"CSEnergy la provee"};
+        {Value:"cliente";  Label:"Por parte del cliente"};
+        {Value:"conjunta"; Label:"Conjunta (CSEnergy + Cliente)"}
+      ));;
+      ClearCollect(colOpcTipoEntrega; Table(
+        {Value:"tablero";  Label:"Tablero Eléctrico"};
+        {Value:"sala";     Label:"Sala Eléctrica"};
+        {Value:"producto"; Label:"Producto Eléctrico"}
+      ));;
+      ClearCollect(colOpcInstalacionNuevaReemplazo; Table(
+        {Value:"nueva";     Label:"Instalación nueva"};
+        {Value:"reemplazo"; Label:"Reemplazo de existente"}
+      ));;
+      ClearCollect(colOpcTipoTablero; Table(
+        {Value:"fuerza";         Label:"Fuerza/Potencia"};
+        {Value:"alumbrado";      Label:"Alumbrado/Distribución BT"};
+        {Value:"control";        Label:"Control/Automatización"};
+        {Value:"transfer";       Label:"Transferencia (ATS/MTS)"};
+        {Value:"sincronizacion"; Label:"Sincronización de Generadores"};
+        {Value:"remoto";         Label:"Distribución Remoto"};
+        {Value:"pfcs";           Label:"Factor de Potencia"};
+        {Value:"medicion";       Label:"Medición/Centro de Carga"};
+        {Value:"variadores";     Label:"Variadores de Frecuencia"};
+        {Value:"arrancadores";   Label:"Arrancadores Suaves"};
+        {Value:"ups";            Label:"UPS/Respaldo"};
+        {Value:"otro";           Label:"Otro"}
+      ));;
+      ClearCollect(colOpcUbicacion; Table(
+        {Value:"interior"; Label:"Interior"};
+        {Value:"exterior"; Label:"Exterior"}
+      ));;
+      ClearCollect(colOpcAmbienteEspecial; Table(
+        {Value:"marino";      Label:"Ambiente marino"};
+        {Value:"minero";      Label:"Ambiente minero"};
+        {Value:"humedo";      Label:"Húmedo"};
+        {Value:"corrosivo";   Label:"Corrosivo"};
+        {Value:"polvoriento"; Label:"Polvoriento"};
+        {Value:"explosivo";   Label:"Atmósfera explosiva"};
+        {Value:"otro";        Label:"Otro"}
+      ));;
+      ClearCollect(colOpcTipoMontaje; Table(
+        {Value:"autosoportado"; Label:"Autosoportado"};
+        {Value:"mural";         Label:"Mural"};
+        {Value:"rack_19";       Label:"Rack 19"};
+        {Value:"pedestal";      Label:"Pedestal"};
+        {Value:"otro";          Label:"Otro"}
+      ));;
+      ClearCollect(colOpcTension; Table(
+        {Value:"220";  Label:"220 V"};
+        {Value:"380";  Label:"380 V"};
+        {Value:"400";  Label:"400 V"};
+        {Value:"440";  Label:"440 V"};
+        {Value:"480";  Label:"480 V"};
+        {Value:"690";  Label:"690 V"};
+        {Value:"1000"; Label:"1000 V"};
+        {Value:"otro"; Label:"Otro"}
+      ));;
+      ClearCollect(colOpcSistema; Table(
+        {Value:"trifasico";  Label:"Trifásico"};
+        {Value:"monofasico"; Label:"Monofásico"};
+        {Value:"dc";         Label:"Corriente continua (DC)"};
+        {Value:"otro";       Label:"Otro"}
+      ));;
+      ClearCollect(colOpcUnidadPotencia; Table(
+        {Value:"kW";  Label:"kW"};
+        {Value:"kVA"; Label:"kVA"}
+      ));;
+      ClearCollect(colOpcFrecuencia; Table(
+        {Value:"50";   Label:"50 Hz"};
+        {Value:"60";   Label:"60 Hz"};
+        {Value:"otro"; Label:"Otra"}
+      ));;
+      ClearCollect(colOpcProteccionesRequeridas; Table(
+        {Value:"interruptor_automatico"; Label:"Interruptor automático"};
+        {Value:"diferencial";            Label:"Diferencial"};
+        {Value:"fusible";                Label:"Fusible"};
+        {Value:"relevo_sobrecarga";      Label:"Relevo de sobrecarga"};
+        {Value:"relevo_falla_tierra";    Label:"Relevo de falla a tierra"};
+        {Value:"proteccion_tension";     Label:"Protección de tensión"};
+        {Value:"proteccion_corriente";   Label:"Protección de corriente"};
+        {Value:"descargador_tension";    Label:"Descargador de tensión"};
+        {Value:"otro";                   Label:"Otro"}
+      ));;
+      ClearCollect(colOpcMarcasPreferidas; Table(
+        {Value:"schneider";  Label:"Schneider Electric"};
+        {Value:"siemens";    Label:"Siemens"};
+        {Value:"abb";        Label:"ABB"};
+        {Value:"legrand";    Label:"Legrand"};
+        {Value:"eaton";      Label:"Eaton"};
+        {Value:"chint";      Label:"Chint"};
+        {Value:"hager";      Label:"Hager"};
+        {Value:"weidmuller"; Label:"Weidmüller"};
+        {Value:"phoenix";    Label:"Phoenix Contact"};
+        {Value:"otro";       Label:"Otro"}
+      ));;
+      ClearCollect(colOpcMaterialGabinete; Table(
+        {Value:"acero_pintado";     Label:"Acero pintado"};
+        {Value:"acero_galvanizado"; Label:"Acero galvanizado"};
+        {Value:"acero_inoxidable";  Label:"Acero inoxidable"};
+        {Value:"acero_inox_316";    Label:"Acero inoxidable 316"};
+        {Value:"fibra_vidrio";      Label:"Fibra de vidrio"};
+        {Value:"poliester";         Label:"Poliéster"};
+        {Value:"aluminio";          Label:"Aluminio"}
+      ));;
+      ClearCollect(colOpcColorGabinete; Table(
+        {Value:"7035"; Label:"RAL 7035 (gris claro)"};
+        {Value:"7016"; Label:"RAL 7016 (gris antracita)"};
+        {Value:"9016"; Label:"RAL 9016 (blanco tráfico)"};
+        {Value:"9005"; Label:"RAL 9005 (negro)"};
+        {Value:"5010"; Label:"RAL 5010 (azul)"};
+        {Value:"6005"; Label:"RAL 6005 (verde)"};
+        {Value:"otro"; Label:"Otro"}
+      ));;
+      ClearCollect(colOpcTipoVentilacion; Table(
+        {Value:"natural";     Label:"Natural"};
+        {Value:"forzada";     Label:"Forzada (ventilador)"};
+        {Value:"sellado";     Label:"Sellado (IP alto)"};
+        {Value:"climatizado"; Label:"Climatizado (aire acondicionado)"}
+      ));;
+      ClearCollect(colOpcExpansionFutura; Table(
+        {Value:"no";   Label:"Sin expansión"};
+        {Value:"10";   Label:"10%"};
+        {Value:"20";   Label:"20%"};
+        {Value:"30";   Label:"30%"};
+        {Value:"otro"; Label:"Otro"}
+      ))
+    # Si prefieres, define colTableros/colOpc* como Named Formulas en lugar de OnStart.
 ```
+
+> `GradoIP` (depende de `Ubicacion`, se arma con `Switch`) y `GradoIK` (lista
+> fija sin etiqueta propia — el código es la etiqueta) **no** tienen colección:
+> siguen como arrays de texto plano directamente en el `Items` del control.
 
 ---
 
@@ -62,7 +225,7 @@ Screens:
       Fill: =RGBA(245; 246; 248; 1)
     Children:
       - lblTituloContacto:
-          Control: Text
+          Control: ModernText@1.0.0
           Properties:
             Text: ="Contacto y Proyecto"
             X: =40
@@ -73,21 +236,21 @@ Screens:
 
       # --- Datos de contacto ---
       - txtContactoNombre:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            HintText: ="Nombre del contacto *"
+            Placeholder: ="Nombre del contacto *"
             X: =40
             Y: =88
             Width: =360
       - txtContactoEmail:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            HintText: ="Correo electrónico *"
+            Placeholder: ="Correo electrónico *"
             X: =420
             Y: =88
             Width: =360
       - lblEmailError:
-          Control: Text
+          Control: ModernText@1.0.0
           Properties:
             Text: ="Correo con formato inválido"
             X: =420
@@ -96,66 +259,61 @@ Screens:
             Color: =RGBA(239; 68; 68; 1)
             Visible: =And(Len(txtContactoEmail.Text) > 0; Not(IsMatch(txtContactoEmail.Text; Match.Email)))
       - txtContactoTelefono:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            HintText: ="Teléfono (+56)"
+            Placeholder: ="Teléfono (+56)"
             X: =800
             Y: =88
             Width: =200
 
       # --- Datos del proyecto ---
       - txtNombreProyecto:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            HintText: ="Nombre del proyecto/obra *"
+            Placeholder: ="Nombre del proyecto/obra *"
             X: =40
             Y: =160
             Width: =360
       - txtEmpresaCliente:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            HintText: ="Empresa/Cliente"
+            Placeholder: ="Empresa/Cliente"
             X: =420
             Y: =160
             Width: =360
       - txtUbicacion:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            HintText: ="Ubicación de la instalación"
+            Placeholder: ="Ubicación de la instalación"
             X: =40
             Y: =220
             Width: =360
       - txtCentroCosto:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            HintText: ="Centro de costo (MO-12345)"
+            Placeholder: ="Centro de costo (MO-12345)"
             X: =420
             Y: =220
             Width: =360
       - dtpEntrega:
-          Control: DatePicker
+          Control: ModernDatePicker@1.0.0
           Properties:
             X: =800
             Y: =220
             Width: =200
 
       - ddIngenieriaPor:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value: "csenergy"; Label: "CSEnergy la provee"};
-                {Value: "cliente";  Label: "Por parte del cliente"};
-                {Value: "conjunta"; Label: "Conjunta (CSEnergy + Cliente)"}
-              )
-            Value: =Label
+            Items: =colOpcIngenieriaPor
+            ItemDisplayText: =ThisItem.Label
             X: =40
             Y: =292
             Width: =500
 
       # --- Navegación ---
       - btnSiguiente:
-          Control: Button
+          Control: ModernButton@1.0.0
           Properties:
             Text: ="Siguiente"
             X: =800
@@ -182,84 +340,64 @@ Screens:
   scrTableroForm:
     Children:
       - ddTipoEntrega:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"tablero"; Label:"Tablero Eléctrico"};
-                {Value:"sala";    Label:"Sala Eléctrica"};
-                {Value:"producto";Label:"Producto Eléctrico"}
-              )
-            Value: =Label
+            Items: =colOpcTipoEntrega
+            ItemDisplayText: =ThisItem.Label
 
       - ddInstalacionNuevaReemplazo:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"nueva";     Label:"Instalación nueva"};
-                {Value:"reemplazo"; Label:"Reemplazo de existente"}
-              )
-            Value: =Label
+            Items: =colOpcInstalacionNuevaReemplazo
+            ItemDisplayText: =ThisItem.Label
 
       - txtNombreTablero:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            HintText: ="Nombre del tablero * (Ej.: TG Principal)"
+            Placeholder: ="Nombre del tablero * (Ej.: TG Principal)"
 
-      - txtCantidad:
-          Control: TextInput
+      - numCantidad:
+          Control: ModernNumberInput@1.0.0
           Properties:
             HintText: ="Cantidad"
-            Format: =TextFormat.Number
-            Default: ="1"
+            Default: =1
+            Min: =1
+            Max: =999
+            Precision: =DecimalPrecision.'0'
 
       # Tipo de tablero: visible solo si TipoEntrega = "tablero"
       - ddTipoTablero:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
             Visible: =ddTipoEntrega.Selected.Value = "tablero"
-            Items: |
-              =Table(
-                {Value:"fuerza";Label:"Fuerza/Potencia"};
-                {Value:"alumbrado";Label:"Alumbrado/Distribución BT"};
-                {Value:"control";Label:"Control/Automatización"};
-                {Value:"transfer";Label:"Transferencia (ATS/MTS)"};
-                {Value:"sincronizacion";Label:"Sincronización de Generadores"};
-                {Value:"remoto";Label:"Distribución Remoto"};
-                {Value:"pfcs";Label:"Factor de Potencia"};
-                {Value:"medicion";Label:"Medición/Centro de Carga"};
-                {Value:"variadores";Label:"Variadores de Frecuencia"};
-                {Value:"arrancadores";Label:"Arrancadores Suaves"};
-                {Value:"ups";Label:"UPS/Respaldo"};
-                {Value:"otro";Label:"Otro"}
-              )
-            Value: =Label
+            Items: =colOpcTipoTablero
+            ItemDisplayText: =ThisItem.Label
 
       # Otro tipo de tablero: visible solo si TipoTablero = "otro"
       - txtOtroTipoTablero:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
             Visible: =ddTipoTablero.Selected.Value = "otro"
-            HintText: ="Especifica el tipo de tablero"
+            Placeholder: ="Especifica el tipo de tablero"
 
       - txtFuncionTablero:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            Mode: =TextMode.MultiLine
-            HintText: ="Función del tablero"
+            Type: =TextInputType.Multiline
+            Placeholder: ="Función del tablero"
 
       - txtCargasAAlimentar:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            Mode: =TextMode.MultiLine
-            HintText: ="Cargas a alimentar"
+            Type: =TextInputType.Multiline
+            Placeholder: ="Cargas a alimentar"
 
-      - txtNumeroCircuitos:
-          Control: TextInput
+      - numNumeroCircuitos:
+          Control: ModernNumberInput@1.0.0
           Properties:
             HintText: ="Número de circuitos"
-            Format: =TextFormat.Number
+            Min: =0
+            Precision: =DecimalPrecision.'0'
 ```
 
 ---
@@ -270,41 +408,31 @@ Screens:
   scrTableroForm2a:
     Children:
       - ddUbicacion:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"interior"; Label:"Interior"};
-                {Value:"exterior"; Label:"Exterior"}
-              )
-            Value: =Label
+            Items: =colOpcUbicacion
+            ItemDisplayText: =ThisItem.Label
 
       # Ambiente especial: multi-select
       - cmbAmbienteEspecial:
-          Control: ComboBox
+          Control: ModernCombobox@1.0.0
           Properties:
+            Items: =colOpcAmbienteEspecial
+            ItemDisplayText: =ThisItem.Label
             SelectMultiple: =true
-            Items: |
-              =Table(
-                {Value:"marino";      Label:"Ambiente marino"};
-                {Value:"minero";      Label:"Ambiente minero"};
-                {Value:"humedo";      Label:"Húmedo"};
-                {Value:"corrosivo";   Label:"Corrosivo"};
-                {Value:"polvoriento"; Label:"Polvoriento"};
-                {Value:"explosivo";   Label:"Atmósfera explosiva"};
-                {Value:"otro";        Label:"Otro"}
-              )
 
       # Otro ambiente especial: visible si el multiselect incluye "otro"
       - txtOtroAmbiente:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
             Visible: ="otro" in cmbAmbienteEspecial.SelectedItems.Value
-            HintText: ="Especifica el ambiente especial"
+            Placeholder: ="Especifica el ambiente especial"
 
-      # Grado IP: subconjunto según interior/exterior (ver 01-tablas.md)
+      # Grado IP: subconjunto según interior/exterior (ver 01-tablas.md) — array
+      # de texto plano, sin colección: ItemDisplayText no hace falta (el código
+      # es la etiqueta).
       - ddGradoIP:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
             Items: |
               =Switch(ddUbicacion.Selected.Value;
@@ -314,55 +442,51 @@ Screens:
               )
 
       - ddGradoIK:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
             # IK06=1J, IK07=2J, IK08=5J, IK09=10J, IK10=20J (IEC 62262)
             Items: |
               =["IK06";"IK07";"IK08";"IK09";"IK10"]
 
       - ddTipoMontaje:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"autosoportado"; Label:"Autosoportado"};
-                {Value:"mural";         Label:"Mural"};
-                {Value:"rack_19";       Label:"Rack 19"};
-                {Value:"pedestal";      Label:"Pedestal"};
-                {Value:"otro";          Label:"Otro"}
-              )
-            Value: =Label
+            Items: =colOpcTipoMontaje
+            ItemDisplayText: =ThisItem.Label
 
       - tglRestricciones:
-          Control: Toggle
+          Control: ModernToggle@1.0.0
           Properties:
-            Text: ="¿Tiene restricciones de dimensión?"
+            Label: ="¿Tiene restricciones de dimensión?"
 
       # Dimensiones máximas: visibles solo si hay restricciones
-      - txtAltoMax:
-          Control: TextInput
+      - numAltoMax:
+          Control: ModernNumberInput@1.0.0
           Properties:
-            Visible: =tglRestricciones.Value
+            Visible: =tglRestricciones.Checked
             HintText: ="Alto máximo (mm)"
-            Format: =TextFormat.Number
-      - txtAnchoMax:
-          Control: TextInput
+            Min: =0
+            Precision: =DecimalPrecision.'0'
+      - numAnchoMax:
+          Control: ModernNumberInput@1.0.0
           Properties:
-            Visible: =tglRestricciones.Value
+            Visible: =tglRestricciones.Checked
             HintText: ="Ancho máximo (mm)"
-            Format: =TextFormat.Number
-      - txtFondoMax:
-          Control: TextInput
+            Min: =0
+            Precision: =DecimalPrecision.'0'
+      - numFondoMax:
+          Control: ModernNumberInput@1.0.0
           Properties:
-            Visible: =tglRestricciones.Value
+            Visible: =tglRestricciones.Checked
             HintText: ="Fondo máximo (mm)"
-            Format: =TextFormat.Number
+            Min: =0
+            Precision: =DecimalPrecision.'0'
 
       - txtCondicionesInstalacion:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            Mode: =TextMode.MultiLine
-            HintText: ="Condiciones adicionales de instalación"
+            Type: =TextInputType.Multiline
+            Placeholder: ="Condiciones adicionales de instalación"
 ```
 
 ---
@@ -373,73 +497,54 @@ Screens:
   scrTableroForm2b:
     Children:
       - ddTension:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"220";  Label:"220 V"};
-                {Value:"380";  Label:"380 V"};
-                {Value:"400";  Label:"400 V"};
-                {Value:"440";  Label:"440 V"};
-                {Value:"480";  Label:"480 V"};
-                {Value:"690";  Label:"690 V"};
-                {Value:"1000"; Label:"1000 V"};
-                {Value:"otro"; Label:"Otro"}
-              )
-            Value: =Label
+            Items: =colOpcTension
+            ItemDisplayText: =ThisItem.Label
 
-      - txtOtraTension:
-          Control: TextInput
+      - numOtraTension:
+          Control: ModernNumberInput@1.0.0
           Properties:
             Visible: =ddTension.Selected.Value = "otro"
             HintText: ="Tensión (V)"
-            Format: =TextFormat.Number
+            Min: =0
 
       # Sistema eléctrico: SIN "bifasico" (decisión B-1)
       - ddSistema:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"trifasico";  Label:"Trifásico"};
-                {Value:"monofasico"; Label:"Monofásico"};
-                {Value:"dc";         Label:"Corriente continua (DC)"};
-                {Value:"otro";       Label:"Otro"}
-              )
-            Value: =Label
+            Items: =colOpcSistema
+            ItemDisplayText: =ThisItem.Label
 
       - txtOtroSistema:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
             Visible: =ddSistema.Selected.Value = "otro"
-            HintText: ="Especifica el sistema eléctrico"
+            Placeholder: ="Especifica el sistema eléctrico"
 
-      - txtPotencia:
-          Control: TextInput
+      - numPotencia:
+          Control: ModernNumberInput@1.0.0
           Properties:
             HintText: ="Potencia estimada"
-            Format: =TextFormat.Number
+            Min: =0
+            Precision: =DecimalPrecision.'2'
 
       - ddUnidadPotencia:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"kW";  Label:"kW"};
-                {Value:"kVA"; Label:"kVA"}
-              )
-            Value: =Label
-            Default: ="kW"
+            Items: =colOpcUnidadPotencia
+            ItemDisplayText: =ThisItem.Label
+            Default: =LookUp(colOpcUnidadPotencia; Value = "kW")
 
       # Corriente nominal: calculada (sistema bifásico eliminado, decisión B-1)
       - lblCorriente:
-          Control: Text
+          Control: ModernText@1.0.0
           Properties:
             Text: |
               =With(
                 {
-                  watts: Value(txtPotencia.Text) * 1000;
-                  v: If(ddTension.Selected.Value="otro"; Value(txtOtraTension.Text); Value(ddTension.Selected.Value))
+                  watts: numPotencia.Value * 1000;
+                  v: If(ddTension.Selected.Value="otro"; numOtraTension.Value; Value(ddTension.Selected.Value))
                 };
                 If(Or(watts<=0; v<=0); "";
                   Text(Round(
@@ -454,57 +559,31 @@ Screens:
               )
 
       - ddFrecuencia:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"50";   Label:"50 Hz"};
-                {Value:"60";   Label:"60 Hz"};
-                {Value:"otro"; Label:"Otra"}
-              )
-            Value: =Label
+            Items: =colOpcFrecuencia
+            ItemDisplayText: =ThisItem.Label
 
-      - txtOtraFrecuencia:
-          Control: TextInput
+      - numOtraFrecuencia:
+          Control: ModernNumberInput@1.0.0
           Properties:
             Visible: =ddFrecuencia.Selected.Value = "otro"
             HintText: ="Frecuencia (Hz)"
-            Format: =TextFormat.Number
+            Min: =0
 
       - cmbProteccionesRequeridas:
-          Control: ComboBox
+          Control: ModernCombobox@1.0.0
           Properties:
+            Items: =colOpcProteccionesRequeridas
+            ItemDisplayText: =ThisItem.Label
             SelectMultiple: =true
-            Items: |
-              =Table(
-                {Value:"interruptor_automatico"; Label:"Interruptor automático"};
-                {Value:"diferencial";            Label:"Diferencial"};
-                {Value:"fusible";                Label:"Fusible"};
-                {Value:"relevo_sobrecarga";       Label:"Relevo de sobrecarga"};
-                {Value:"relevo_falla_tierra";     Label:"Relevo de falla a tierra"};
-                {Value:"proteccion_tension";      Label:"Protección de tensión"};
-                {Value:"proteccion_corriente";    Label:"Protección de corriente"};
-                {Value:"descargador_tension";     Label:"Descargador de tensión"};
-                {Value:"otro";                    Label:"Otro"}
-              )
 
       - cmbMarcasPreferidas:
-          Control: ComboBox
+          Control: ModernCombobox@1.0.0
           Properties:
+            Items: =colOpcMarcasPreferidas
+            ItemDisplayText: =ThisItem.Label
             SelectMultiple: =true
-            Items: |
-              =Table(
-                {Value:"schneider";  Label:"Schneider Electric"};
-                {Value:"siemens";    Label:"Siemens"};
-                {Value:"abb";        Label:"ABB"};
-                {Value:"legrand";    Label:"Legrand"};
-                {Value:"eaton";      Label:"Eaton"};
-                {Value:"chint";      Label:"Chint"};
-                {Value:"hager";      Label:"Hager"};
-                {Value:"weidmuller"; Label:"Weidmüller"};
-                {Value:"phoenix";    Label:"Phoenix Contact"};
-                {Value:"otro";       Label:"Otro"}
-              )
 ```
 
 ---
@@ -515,66 +594,35 @@ Screens:
   scrTableroForm3:
     Children:
       - ddMaterialGabinete:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"acero_pintado";     Label:"Acero pintado"};
-                {Value:"acero_galvanizado"; Label:"Acero galvanizado"};
-                {Value:"acero_inoxidable";  Label:"Acero inoxidable"};
-                {Value:"acero_inox_316";    Label:"Acero inoxidable 316"};
-                {Value:"fibra_vidrio";      Label:"Fibra de vidrio"};
-                {Value:"poliester";         Label:"Poliéster"};
-                {Value:"aluminio";          Label:"Aluminio"}
-              )
-            Value: =Label
+            Items: =colOpcMaterialGabinete
+            ItemDisplayText: =ThisItem.Label
 
       - ddColorGabinete:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"7035"; Label:"RAL 7035 (gris claro)"};
-                {Value:"7016"; Label:"RAL 7016 (gris antracita)"};
-                {Value:"9016"; Label:"RAL 9016 (blanco tráfico)"};
-                {Value:"9005"; Label:"RAL 9005 (negro)"};
-                {Value:"5010"; Label:"RAL 5010 (azul)"};
-                {Value:"6005"; Label:"RAL 6005 (verde)"};
-                {Value:"otro"; Label:"Otro"}
-              )
-            Value: =Label
-            Default: ="7035"
+            Items: =colOpcColorGabinete
+            ItemDisplayText: =ThisItem.Label
+            Default: =LookUp(colOpcColorGabinete; Value = "7035")
 
       - ddTipoVentilacion:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"natural";     Label:"Natural"};
-                {Value:"forzada";     Label:"Forzada (ventilador)"};
-                {Value:"sellado";     Label:"Sellado (IP alto)"};
-                {Value:"climatizado"; Label:"Climatizado (aire acondicionado)"}
-              )
-            Value: =Label
+            Items: =colOpcTipoVentilacion
+            ItemDisplayText: =ThisItem.Label
 
       - ddExpansionFutura:
-          Control: DropDown
+          Control: ModernDropdown@1.0.0
           Properties:
-            Items: |
-              =Table(
-                {Value:"no";   Label:"Sin expansión"};
-                {Value:"10";   Label:"10%"};
-                {Value:"20";   Label:"20%"};
-                {Value:"30";   Label:"30%"};
-                {Value:"otro"; Label:"Otro"}
-              )
-            Value: =Label
+            Items: =colOpcExpansionFutura
+            ItemDisplayText: =ThisItem.Label
 
       - txtObservacionesTablero:
-          Control: TextInput
+          Control: ModernTextInput@1.0.0
           Properties:
-            Mode: =TextMode.MultiLine
-            HintText: ="Observaciones del tablero"
+            Type: =TextInputType.Multiline
+            Placeholder: ="Observaciones del tablero"
 ```
 
 > **Documentación/adjuntos del tablero (`EspecificacionesTecnicas`, `ListaCargas`,
@@ -595,11 +643,14 @@ Screens:
 ## Guardar el tablero en la colección
 
 Agrupa los ~36 campos en un solo registro con `With(...)` para no duplicarlos
-entre `Collect` (tablero nuevo) y `Patch` (edición de uno existente).
+entre `Collect` (tablero nuevo) y `Patch` (edición de uno existente). Los
+campos numéricos ya no necesitan `Value(control.Text)` — `ModernNumberInput`
+entrega `.Value` numérico directamente, y `Min`/`Max` del control reemplazan
+el `Clamp(...)` manual.
 
 ```yaml
       - btnGuardarTablero:
-          Control: Button
+          Control: ModernButton@1.0.0
           Properties:
             Text: ="Guardar tablero"
             OnSelect: |
@@ -607,7 +658,7 @@ entre `Collect` (tablero nuevo) y `Patch` (edición de uno existente).
                 {
                   registro: {
                     Nombre: txtNombreTablero.Text;
-                    Cantidad: Clamp(Value(txtCantidad.Text); 1; 999);
+                    Cantidad: numCantidad.Value;
                     Orden: If(IsBlank(varEditIndex); CountRows(colTableros); varEditIndex.Orden);
                     TipoEntrega: ddTipoEntrega.Selected.Value;
                     InstalacionNuevaReemplazo: ddInstalacionNuevaReemplazo.Selected.Value;
@@ -615,27 +666,27 @@ entre `Collect` (tablero nuevo) y `Patch` (edición de uno existente).
                     OtroTipoTablero: If(ddTipoTablero.Selected.Value <> "otro"; Blank(); txtOtroTipoTablero.Text);
                     FuncionTablero: txtFuncionTablero.Text;
                     CargasAAlimentar: txtCargasAAlimentar.Text;
-                    NumeroCircuitos: Value(txtNumeroCircuitos.Text);
+                    NumeroCircuitos: numNumeroCircuitos.Value;
                     Ubicacion: ddUbicacion.Selected.Value;
                     AmbienteEspecial: cmbAmbienteEspecial.SelectedItems;
                     OtroAmbienteEspecial: If(Not("otro" in cmbAmbienteEspecial.SelectedItems.Value); Blank(); txtOtroAmbiente.Text);
                     GradoIP: ddGradoIP.Selected.Value;
                     GradoIK: ddGradoIK.Selected.Value;
                     TipoMontaje: ddTipoMontaje.Selected.Value;
-                    RestriccionesDimension: tglRestricciones.Value;
-                    AltoMaxMm: If(Not(tglRestricciones.Value); Blank(); Value(txtAltoMax.Text));
-                    AnchoMaxMm: If(Not(tglRestricciones.Value); Blank(); Value(txtAnchoMax.Text));
-                    FondoMaxMm: If(Not(tglRestricciones.Value); Blank(); Value(txtFondoMax.Text));
+                    RestriccionesDimension: tglRestricciones.Checked;
+                    AltoMaxMm: If(Not(tglRestricciones.Checked); Blank(); numAltoMax.Value);
+                    AnchoMaxMm: If(Not(tglRestricciones.Checked); Blank(); numAnchoMax.Value);
+                    FondoMaxMm: If(Not(tglRestricciones.Checked); Blank(); numFondoMax.Value);
                     CondicionesInstalacion: txtCondicionesInstalacion.Text;
                     TensionSuministro: ddTension.Selected.Value;
-                    OtraTension: If(ddTension.Selected.Value <> "otro"; Blank(); Value(txtOtraTension.Text));
+                    OtraTension: If(ddTension.Selected.Value <> "otro"; Blank(); numOtraTension.Value);
                     SistemaElectrico: ddSistema.Selected.Value;
                     OtroSistemaElectrico: If(ddSistema.Selected.Value <> "otro"; Blank(); txtOtroSistema.Text);
-                    PotenciaEstimada: Value(txtPotencia.Text);
+                    PotenciaEstimada: numPotencia.Value;
                     UnidadPotencia: ddUnidadPotencia.Selected.Value;
                     CorrienteNominal: Value(lblCorriente.Text);
                     Frecuencia: ddFrecuencia.Selected.Value;
-                    OtraFrecuencia: If(ddFrecuencia.Selected.Value <> "otro"; Blank(); Value(txtOtraFrecuencia.Text));
+                    OtraFrecuencia: If(ddFrecuencia.Selected.Value <> "otro"; Blank(); numOtraFrecuencia.Value);
                     ProteccionesRequeridas: cmbProteccionesRequeridas.SelectedItems;
                     MarcasPreferidas: cmbMarcasPreferidas.SelectedItems;
                     MaterialGabinete: ddMaterialGabinete.Selected.Value;
@@ -680,11 +731,13 @@ Sintaxis de Choice de Dataverse: `'Columna (Tabla)'.Opcion`, o citada
 `'Columna (Tabla)'.'Etiqueta exacta'` cuando la etiqueta tiene espacios,
 tildes o símbolos (evita adivinar cómo Dataverse sanea el texto — usa el
 autocompletado del editor de fórmulas para confirmar el nombre exacto de cada
-opción una vez creadas las Choices).
+opción una vez creadas las Choices). Esta sección no cambia con los controles
+Modern — ya trabaja sobre `t.CampoX` (valores ya extraídos en `colTableros`),
+no sobre los controles directamente.
 
 ```yaml
       - btnEnviar:
-          Control: Button
+          Control: ModernButton@1.0.0
           Properties:
             Text: ="Enviar solicitud"
             OnSelect: |
@@ -917,13 +970,33 @@ opción una vez creadas las Choices).
   deben coincidir **exactamente** (mayúsculas, tildes, símbolos) con las
   etiquetas que crees para cada opción de Choice en Dataverse (Bloque 2-4 de
   [00-construir-en-powerapps.md](../dataverse/00-construir-en-powerapps.md)).
-  Si cambias una etiqueta allá, actualiza el `Switch` correspondiente aquí.
+  Si cambias una etiqueta allá, actualiza el `Switch` correspondiente aquí —
+  y también su par en las colecciones `colOpc*` de "App — colección e
+  inicialización", que son la fuente de esa misma etiqueta para `Items`.
 - Los nombres de columna citados (`'Tipo de Entrega (SolicitudTableros)'`, etc.)
   asumen que le diste esos **nombres para mostrar** a las columnas al crearlas.
   Si usaste otros nombres, ajusta las citas — el prefijo de editor (`csen_`) no
   se escribe en la fórmula, Power Fx resuelve por nombre para mostrar.
+- Los controles Modern son relativamente nuevos y Microsoft los sigue
+  actualizando — si al pegar una fórmula el estudio marca una propiedad como
+  inexistente, revisa la página de ese control en Microsoft Learn (enlaces en
+  Fuentes) por si el nombre cambió desde que se escribió esta guía.
 - Antes de conectar el botón **Enviar solicitud** a producción, prueba el
   recorrido completo en el entorno Developer: captura dos tableros con al
   menos un campo "otro" cada uno (para ejercitar todos los `Switch`), envía, y
   confirma en Dataverse (vista de tabla) que cada columna Choice quedó con la
   opción correcta y no en blanco.
+
+## Fuentes
+
+- [Overview of modern controls and theming in canvas apps](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/overview-modern-controls)
+- [Modern controls and properties in canvas apps (índice)](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-controls-reference)
+- [Button modern control](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-control-button)
+- [Text input modern control](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-control-text-input)
+- [Number input modern control](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-control-number-input)
+- [Dropdown modern control](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-control-dropdown)
+- [Combo box modern control](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-control-combobox)
+- [Toggle modern control](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-control-toggle)
+- [Text modern control](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-control-text)
+- [Date picker modern control](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-controls-date-picker)
+- [Tab list modern control](https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-control-tabs-or-tabs-list)

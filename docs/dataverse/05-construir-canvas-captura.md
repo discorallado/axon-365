@@ -4,7 +4,10 @@ Continúa después de [04-app-model-driven.md](04-app-model-driven.md) (Bloque 1
 Aquí: cómo construir la **app Canvas del wizard de captura** directamente en
 `make.powerapps.com`, control por control, **sin depender de Git integration ni
 de Power Platform CLI** — coherente con el resto de la construcción (todo
-clicando en el navegador).
+clicando en el navegador). Usa **controles Modern** (Fluent) — en el panel
+**Insertar** del estudio, bajo la sección **Modern** (no los controles
+clásicos). Mapeo completo clásico → Modern en
+[docs/powerapps/05-canvas-yaml-captura.md](../powerapps/05-canvas-yaml-captura.md#controles-modern-usados--mapeo-y-diferencias-clave).
 
 ## Arquitectura final (4 pantallas, navegación por pestañas)
 
@@ -57,10 +60,15 @@ botón **Siguiente** que valida y avanza a la próxima en orden.
    - `scrDocumentacion`
    - `scrConfirmacion`
 5. Selecciona **App** en el árbol (arriba de todo) → en la barra de fórmulas,
-   elige la propiedad **OnStart** → pega:
+   elige la propiedad **OnStart** → pega el contenido completo de "App —
+   colección e inicialización" del YAML (`varEditIndex`, `colTableros`, y las
+   ~17 colecciones `colOpc*` que usan los `ModernDropdown`/`ModernCombobox` de
+   la Pantalla 2):
    ```
    Set(varEditIndex; Blank());;
-   ClearCollect(colTableros; [])
+   ClearCollect(colTableros; []);;
+   ClearCollect(colOpcTipoEntrega; Table({Value:"tablero"; Label:"Tablero Eléctrico"}; ...));;
+   // ...resto de colOpc* — ver 05-canvas-yaml-captura.md completo...
    ```
 
 ✅ *Verificable:* 4 pantallas creadas con esos nombres exactos; el conector
@@ -68,64 +76,64 @@ Dataverse aparece en el panel de Datos.
 
 ---
 
-## Bloque 14b — Barra de pestañas compartida
+## Bloque 14b — Barra de pestañas compartida (`ModernTabList`)
 
-Se construye **una sola vez** y se **copia/pega igual** en `scrContactoProyecto`,
-`scrTableroForm` y `scrDocumentacion` — la fórmula de resaltado usa
-`App.ActiveScreen`, así que el mismo botón se ve "activo" o no según en qué
-pantalla esté pegado, sin tener que cambiar nada al copiarlo.
+Power Apps trae un control Modern dedicado exactamente para esto —
+**`ModernTabList@1.0.0`** ("Tabs o tab list" en el panel Insertar → Modern) —
+en vez de armar la barra a mano con botones. Se inserta **una copia por
+pantalla** (`scrContactoProyecto`, `scrTableroForm`, `scrDocumentacion`); la
+única diferencia entre copias es el `Default` (qué pestaña aparece marcada al
+entrar a esa pantalla).
 
-1. Crea un **`Group`** llamado `grpPestanas` con 3 botones dentro:
-   `btnTabContacto` ("Contacto y Proyecto"), `btnTabTableros` ("Tableros"),
-   `btnTabDocumentacion` ("Documentación").
-2. Para **cada uno** de los 3 botones:
-   - `OnSelect` (navega directo a esa pantalla, sin animación):
-     ```
-     // btnTabContacto
-     Navigate(scrContactoProyecto; ScreenTransition.None)
-
-     // btnTabTableros
-     Navigate(scrTableroForm; ScreenTransition.None)
-
-     // btnTabDocumentacion
+1. En cada una de las 3 pantallas → **Insertar → Modern → Tabs o tab list** →
+   nómbralo `navPestanas`.
+2. **`Items`** (igual en las 3 copias):
+   ```
+   ["Contacto y Proyecto"; "Tableros"; "Documentación"]
+   ```
+3. **`Default`** — **distinto en cada pantalla**, la pestaña que corresponde a
+   esa pantalla:
+   - En `scrContactoProyecto`: `"Contacto y Proyecto"`
+   - En `scrTableroForm`: `"Tableros"`
+   - En `scrDocumentacion`: `"Documentación"`
+4. **`OnChange`** (igual en las 3 copias) — navega según la pestaña elegida.
+   `OnChange` solo dispara cuando el usuario cambia de pestaña (no si toca la
+   ya activa), así que no navega en falso a la misma pantalla:
+   ```
+   Switch(Self.Selected.Value;
+     "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
+     "Tableros";            Navigate(scrTableroForm; ScreenTransition.None);
      Navigate(scrDocumentacion; ScreenTransition.None)
-     ```
-   - `Fill` (resalta la pestaña activa):
-     ```
-     // btnTabContacto.Fill
-     If(App.ActiveScreen = scrContactoProyecto; RGBA(30;64;175;1); RGBA(255;255;255;1))
-
-     // btnTabTableros.Fill
-     If(App.ActiveScreen = scrTableroForm; RGBA(30;64;175;1); RGBA(255;255;255;1))
-
-     // btnTabDocumentacion.Fill
-     If(App.ActiveScreen = scrDocumentacion; RGBA(30;64;175;1); RGBA(255;255;255;1))
-     ```
-3. Selecciona `grpPestanas` completo → **Copiar** (Ctrl+C) → pégalo (Ctrl+V) en
-   `scrTableroForm` y en `scrDocumentacion`, en la misma posición.
+   )
+   ```
+5. (Opcional) `Appearance: =TabListAppearance.Underline` para el estilo visual
+   de subrayado bajo la pestaña activa.
 
 > **Las pestañas navegan libremente** (sin validar) — es intencional: sirven
 > para revisar/editar cualquier sección sin bloqueos. La validación real de
 > "¿puedo avanzar?" vive en el botón **Siguiente** de cada pantalla (Bloques
 > 15-17), no en las pestañas. Si prefieres bloquear el salto a "Documentación"
-> hasta que "Tableros" tenga al menos un tablero, agrega la misma condición
-> del Bloque 16 (`CountRows(colTableros) = 0`) al `OnSelect` de
-> `btnTabDocumentacion` en las 3 copias.
+> hasta que "Tableros" tenga al menos un tablero, envuelve esa rama del
+> `Switch` con la misma condición del Bloque 16
+> (`If(CountRows(colTableros) = 0; Notify(...); Navigate(scrDocumentacion; ...))`)
+> en las 3 copias.
 
 ✅ *Verificable:* las 3 pantallas muestran la misma barra arriba; la pestaña
-de la pantalla en la que estás parado se ve resaltada; tocar otra pestaña
-navega ahí sin perder los datos ya escritos (los controles retienen su valor
-al navegar entre pantallas dentro de la misma sesión de la app).
+de la pantalla en la que estás parado aparece marcada como activa (por el
+`Default` de esa copia); tocar otra pestaña navega ahí sin perder los datos
+ya escritos (los controles retienen su valor al navegar entre pantallas
+dentro de la misma sesión de la app).
 
 ---
 
 ## Bloque 15 — Pantalla 1: Contacto y Proyecto (`scrContactoProyecto`)
 
 Para cada control de la sección **"Pantalla 1 — Contacto y Proyecto"** del
-YAML: **Insertar** el tipo de control indicado (`Control:` → Texto, Entrada
-de texto, Selector de fecha, Lista desplegable o Botón), renómbralo con el
-nombre exacto de la clave YAML, y en cada propiedad listada pega el contenido
-de la fórmula (sin el `=`).
+YAML: **Insertar → Modern** → el tipo de control indicado por el `Control:`
+del YAML (`ModernText`→Text, `ModernTextInput`→Text input,
+`ModernDatePicker`→Date picker, `ModernDropdown`→Dropdown,
+`ModernButton`→Button), renómbralo con el nombre exacto de la clave YAML, y
+en cada propiedad listada pega el contenido de la fórmula (sin el `=`).
 
 Controles: `lblTituloContacto`, `txtContactoNombre`, `txtContactoEmail`,
 `lblEmailError`, `txtContactoTelefono`, `txtNombreProyecto`,
@@ -195,11 +203,11 @@ Dataverse y navega a `scrConfirmacion`.
 No lleva la barra de pestañas — es un estado terminal, no una sección del
 formulario.
 
-1. **`lblConfirmacion`** (Texto):
+1. **`lblConfirmacion`** (`ModernText@1.0.0`):
    ```
    "Solicitud enviada correctamente. Código: " & varSolicitud.ReferenceCode
    ```
-2. **`btnNuevaSolicitud`** (Botón) — "Registrar otra solicitud"
+2. **`btnNuevaSolicitud`** (`ModernButton@1.0.0`) — "Registrar otra solicitud"
    - `OnSelect`: `Navigate(scrContactoProyecto)`
 
 ✅ *Verificable:* tras **Enviar solicitud**, aparece esta pantalla mostrando el

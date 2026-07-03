@@ -1,21 +1,30 @@
-# Guía de construcción — Power App Canvas de captura (maestro-detalle)
+# Guía de construcción — Power App Canvas de captura (maestro-detalle, Modern controls)
 
-App que reemplaza al `PublicFormWizard` de Filament, sobre **Dataverse**.
-Arquitectura final: **3 pantallas navegadas por pestañas** (Contacto y
-Proyecto / Tableros / Documentación, con una barra de pestañas compartida que
-permite saltar directo a cualquiera) + una **pantalla de confirmación** fuera
-del flujo de pestañas. Este documento es la referencia completa de la
-**Pantalla 2 — Tableros** (`scrTableroForm`), construida como **maestro-detalle
-en una sola pantalla**: galería de tableros a la izquierda + formulario
-completo a la derecha.
+App que reemplaza al `PublicFormWizard` de Filament, sobre **Dataverse**, con
+los **controles Modern** de Power Apps (Fluent). Arquitectura final: **3
+pantallas navegadas por pestañas** (Contacto y Proyecto / Tableros /
+Documentación, con `ModernTabList` compartido que permite saltar directo a
+cualquiera) + una **pantalla de confirmación** fuera del flujo de pestañas.
+Este documento es la referencia completa de la **Pantalla 2 — Tableros**
+(`scrTableroForm`), construida como **maestro-detalle en una sola pantalla**:
+galería de tableros a la izquierda + formulario completo a la derecha.
 
 > **Dónde está el resto:** la app completa (las 4 pantallas, la barra de
 > pestañas compartida, y las Pantallas 1 y 3) se arma siguiendo
 > [dataverse/05-construir-canvas-captura.md](../dataverse/05-construir-canvas-captura.md) —
 > ese documento manda a **este** para el detalle de la Pantalla 2. Las
-> fórmulas exactas de cada campo (`Items`, tipos, opciones) están en
-> [05-canvas-yaml-captura.md](05-canvas-yaml-captura.md) — aquí se referencian,
-> no se duplican.
+> fórmulas exactas de cada campo (`Items`, tipos, opciones, las colecciones
+> `colOpc*`) están en [05-canvas-yaml-captura.md](05-canvas-yaml-captura.md)
+> — aquí se referencian, no se duplican.
+
+> **Mapeo de controles clásico → Modern** (identificadores YAML, propiedades
+> que cambiaron): tabla completa en
+> [05-canvas-yaml-captura.md](05-canvas-yaml-captura.md#controles-modern-usados--mapeo-y-diferencias-clave).
+> Lo más relevante para esta pantalla: `Toggle.Value` → **`Toggle.Checked`**;
+> los campos numéricos usan **`ModernNumberInput`** (propiedad `.Value`, ya
+> numérica — no más `Value(control.Text)`); el `Default` de un
+> `ModernDropdown` necesita el **record** completo de `Items`, no un string
+> — se resuelve con `LookUp(colOpcX; Value = codigo)`.
 
 > **Licencia:** conector **Dataverse** — incluido en el Plan Developer /
 > licencia de la empresa. No requiere Power Apps premium.
@@ -43,13 +52,19 @@ completo a la derecha.
 ## 1. Modelo de datos en memoria
 
 La solicitud se arma en memoria y se guarda toda al final (cabecera + N
-tableros), igual que el wizard original. Una **colección local** de tableros
-y una variable para saber si se está editando uno existente:
+tableros), igual que el wizard original. Una **colección local** de tableros,
+una variable para saber si se está editando uno existente, y las
+**colecciones de opciones** (`colOpc*`) que usan los `ModernDropdown`/
+`ModernCombobox` de esta pantalla — todo esto se define una sola vez en
+`App.OnStart`; fórmula completa en
+[05-canvas-yaml-captura.md](05-canvas-yaml-captura.md#app--colección-e-inicialización).
 
 ```powerfx
-// App.OnStart
-ClearCollect(colTableros; []);;  // tableros de la solicitud en curso
-Set(varEditIndex; Blank())       // Blank = nuevo tablero; record = editando uno existente
+// App.OnStart (resumen — ver 05 para las ~17 colecciones colOpc* completas)
+Set(varEditIndex; Blank());;       // Blank = nuevo tablero; record = editando uno existente
+ClearCollect(colTableros; []);;    // tableros de la solicitud en curso
+ClearCollect(colOpcTipoEntrega; Table({Value:"tablero"; Label:"Tablero Eléctrico"}; /* ... */))
+// ...resto de colOpc* (uno por cada ModernDropdown/ModernCombobox de tipo Choice)...
 ```
 
 ---
@@ -68,39 +83,43 @@ pestañas compartida (Bloque 14b de
 
 ## 3. Pantalla 2 — Tableros (maestro-detalle en una sola pantalla)
 
-`scrTableroForm` tiene **dos `Container`**: `cntGaleria` (izquierda, ~30% del
-ancho) y `cntFormulario` (derecha, ~70%, con scroll vertical — son ~37 campos,
-no entran en el alto de una pantalla Tableta). Arriba de todo va la barra de
-pestañas compartida (Bloque 14b de
-[dataverse/05](../dataverse/05-construir-canvas-captura.md)).
+`scrTableroForm` tiene **dos `Container`** (clásicos — no hay versión Modern
+de contenedores): `cntGaleria` (izquierda, ~30% del ancho) y `cntFormulario`
+(derecha, ~70%, con scroll vertical — son ~37 campos, no entran en el alto de
+una pantalla Tableta). Arriba de todo va la barra de pestañas compartida
+(Bloque 14b de [dataverse/05](../dataverse/05-construir-canvas-captura.md)).
 
 ### 3.1 Contenedor izquierdo — galería de tableros
 
-- **`galTableros`** (Galería vertical), `Items`: `colTableros`.
+- **`galTableros`** (Galería vertical — **clásica**, no hay `Gallery` Modern)
+  `Items`: `colTableros`.
 - Dentro de la plantilla:
-  - **`lblNombreTablero`** (Texto), `Text`: `ThisItem.Nombre`
-  - **`lblResumenTablero`** (Texto), `Text`: `"×" & ThisItem.Cantidad`
-  - **Resaltar la fila seleccionada** — `Fill` del contenedor de la plantilla:
+  - **`lblNombreTablero`** (`ModernText@1.0.0`), `Text`: `ThisItem.Nombre`
+  - **`lblResumenTablero`** (`ModernText@1.0.0`), `Text`: `"×" & ThisItem.Cantidad`
+  - **Resaltar la fila seleccionada** — `Fill` del contenedor de la plantilla
+    (el `Group`/container clásico sí tiene `Fill`, no cambia):
     ```powerfx
     If(ThisItem = galTableros.Selected; RGBA(99;102;241;0.15); RGBA(255;255;255;1))
     ```
     (si tu versión de Studio ya resalta la fila tocada de forma nativa, esta
     fórmula es opcional.)
-- **`lblSinTableros`** (Texto) — "Aún no hay tableros en esta solicitud."
+- **`lblSinTableros`** (`ModernText@1.0.0`) — "Aún no hay tableros en esta solicitud."
   `Visible`: `CountRows(colTableros) = 0`
-- **`lblContadorTableros`** (Texto, opcional) — `Text`:
+- **`lblContadorTableros`** (`ModernText@1.0.0`, opcional) — `Text`:
   `CountRows(colTableros) & " tablero(s) agregado(s)"`
-- **`btnEditarTablero`** y **`btnEliminarTablero`** — van **arriba de la
-  galería**, no dentro de cada fila; actúan sobre `galTableros.Selected` (la
-  fila tocada). Deshabilitados si no hay ninguna seleccionada:
+- **`btnEditarTablero`** y **`btnEliminarTablero`** (`ModernButton@1.0.0`) —
+  van **arriba de la galería**, no dentro de cada fila; actúan sobre
+  `galTableros.Selected` (la fila tocada). Deshabilitados si no hay ninguna
+  seleccionada (`DisplayMode` sigue existiendo igual en `ModernButton`):
   ```powerfx
   // DisplayMode de ambos botones
   If(IsBlank(galTableros.Selected); DisplayMode.Disabled; DisplayMode.Edit)
   ```
   `btnEditarTablero.OnSelect` — ver 3.3. `btnEliminarTablero.OnSelect` — ver 3.7.
-- **`btnAgregarTablero`** (Botón) — "+ Agregar Tablero", bajo la galería — ver 3.6.
-- **`btnSiguienteTableros`** (Botón) — "Siguiente", junto al anterior. Valida
-  que haya al menos un tablero antes de pasar a Documentación:
+- **`btnAgregarTablero`** (`ModernButton@1.0.0`) — "+ Agregar Tablero", bajo la
+  galería — ver 3.6.
+- **`btnSiguienteTableros`** (`ModernButton@1.0.0`) — "Siguiente", junto al
+  anterior. Valida que haya al menos un tablero antes de pasar a Documentación:
   ```powerfx
   // btnSiguienteTableros.OnSelect
   If(
@@ -112,7 +131,7 @@ pestañas compartida (Bloque 14b de
 
 ### 3.2 Contenedor derecho — indicador de modo
 
-**`lblModoEdicion`** (Texto), arriba del formulario:
+**`lblModoEdicion`** (`ModernText@1.0.0`), arriba del formulario:
 ```powerfx
 If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)
 ```
@@ -121,10 +140,10 @@ uno ya guardado.
 
 ### 3.3 Por qué hace falta `Reset()` — y el `OnSelect` de "Editar"
 
-`Default` de un control **se lee una sola vez**, al crearse o al llamar
-`Reset(control)`. Cambiar `varEditIndex` **no** refresca los controles solos.
-Por eso, cada vez que se carga un tablero distinto en el panel derecho (o se
-limpia el formulario), hay que resetear los ~35 controles.
+`Default`/`Checked` de un control **se lee una sola vez**, al crearse o al
+llamar `Reset(control)`. Cambiar `varEditIndex` **no** refresca los controles
+solos. Por eso, cada vez que se carga un tablero distinto en el panel derecho
+(o se limpia el formulario), hay que resetear los ~35 controles.
 
 Tocar una fila de `galTableros` solo la **selecciona** (la resalta); **no**
 carga sus datos en el panel derecho todavía — eso lo hace explícitamente
@@ -135,19 +154,19 @@ que se está editando por accidente:
 // btnEditarTablero.OnSelect
 Set(varEditIndex; galTableros.Selected);;
 Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
-Reset(txtCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
-Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(txtNumeroCircuitos);;
+Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
+Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(numNumeroCircuitos);;
 Reset(ddUbicacion);; Reset(cmbAmbienteEspecial);; Reset(txtOtroAmbiente);;
 Reset(ddGradoIP);; Reset(ddGradoIK);; Reset(ddTipoMontaje);; Reset(tglRestricciones);;
-Reset(txtAltoMax);; Reset(txtAnchoMax);; Reset(txtFondoMax);; Reset(txtCondicionesInstalacion);;
-Reset(ddTension);; Reset(txtOtraTension);; Reset(ddSistema);; Reset(txtOtroSistema);;
-Reset(txtPotencia);; Reset(ddUnidadPotencia);; Reset(ddFrecuencia);; Reset(txtOtraFrecuencia);;
+Reset(numAltoMax);; Reset(numAnchoMax);; Reset(numFondoMax);; Reset(txtCondicionesInstalacion);;
+Reset(ddTension);; Reset(numOtraTension);; Reset(ddSistema);; Reset(txtOtroSistema);;
+Reset(numPotencia);; Reset(ddUnidadPotencia);; Reset(ddFrecuencia);; Reset(numOtraFrecuencia);;
 Reset(cmbProteccionesRequeridas);; Reset(cmbMarcasPreferidas);; Reset(ddMaterialGabinete);;
 Reset(ddColorGabinete);; Reset(ddTipoVentilacion);; Reset(ddExpansionFutura);;
 Reset(txtObservacionesTablero)
 ```
 
-`lblCorriente` **no** entra en la lista — es un `Text` calculado, se
+`lblCorriente` **no** entra en la lista — es un `ModernText` calculado, se
 recalcula solo en cuanto cambian los controles de los que depende.
 
 > **El orden de los `Reset()` importa** cuando un control depende de otro:
@@ -162,49 +181,54 @@ necesitan (3.6 Nuevo tablero, 3.5 Guardar tablero, 3.7 Eliminar tablero) — Pow
 Fx en Canvas no tiene funciones reutilizables definidas por el usuario, así
 que se repite tal cual en cada `OnSelect`.
 
-### 3.4 `Default` de cada control — carga los valores al editar
+### 3.4 `Default`/`Checked` de cada control — carga los valores al editar
 
-| Control | Tipo | `Default` |
-|---|---|---|
-| `txtNombreTablero` | Texto | `If(IsBlank(varEditIndex); ""; varEditIndex.Nombre)` |
-| `txtCantidad` | Número | `If(IsBlank(varEditIndex); ""; Text(varEditIndex.Cantidad))` |
-| `ddTipoEntrega` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.TipoEntrega; "tablero"; "Tablero Eléctrico"; "sala"; "Sala Eléctrica"; "Producto Eléctrico"))` |
-| `ddInstalacionNuevaReemplazo` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.InstalacionNuevaReemplazo; "nueva"; "Instalación nueva"; "Reemplazo de existente"))` |
-| `ddTipoTablero` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.TipoTablero; "fuerza";"Fuerza/Potencia"; "alumbrado";"Alumbrado/Distribución BT"; "control";"Control/Automatización"; "transfer";"Transferencia (ATS/MTS)"; "sincronizacion";"Sincronización de Generadores"; "remoto";"Distribución Remoto"; "pfcs";"Factor de Potencia"; "medicion";"Medición/Centro de Carga"; "variadores";"Variadores de Frecuencia"; "arrancadores";"Arrancadores Suaves"; "ups";"UPS/Respaldo"; "Otro"))` |
-| `txtOtroTipoTablero` | Texto | `If(IsBlank(varEditIndex); ""; varEditIndex.OtroTipoTablero)` |
-| `txtFuncionTablero` | Texto multilínea | `If(IsBlank(varEditIndex); ""; varEditIndex.FuncionTablero)` |
-| `txtCargasAAlimentar` | Texto multilínea | `If(IsBlank(varEditIndex); ""; varEditIndex.CargasAAlimentar)` |
-| `txtNumeroCircuitos` | Número | `If(IsBlank(varEditIndex); ""; Text(varEditIndex.NumeroCircuitos))` |
-| `ddUbicacion` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.Ubicacion; "interior"; "Interior"; "Exterior"))` |
-| `cmbAmbienteEspecial` | ComboBox multi | `DefaultSelectedItems`: `If(IsBlank(varEditIndex); Table(); varEditIndex.AmbienteEspecial)` |
-| `txtOtroAmbiente` | Texto | `If(IsBlank(varEditIndex); ""; varEditIndex.OtroAmbienteEspecial)` |
-| `ddGradoIP` | DropDown (array plano) | `If(IsBlank(varEditIndex); Blank(); varEditIndex.GradoIP)` |
-| `ddGradoIK` | DropDown (array plano) | `If(IsBlank(varEditIndex); Blank(); varEditIndex.GradoIK)` |
-| `ddTipoMontaje` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.TipoMontaje; "autosoportado";"Autosoportado"; "mural";"Mural"; "rack_19";"Rack 19"; "pedestal";"Pedestal"; "Otro"))` |
-| `tglRestricciones` | Toggle | `If(IsBlank(varEditIndex); false; varEditIndex.RestriccionesDimension)` |
-| `txtAltoMax` | Número | `If(IsBlank(varEditIndex); ""; Text(varEditIndex.AltoMaxMm))` |
-| `txtAnchoMax` | Número | `If(IsBlank(varEditIndex); ""; Text(varEditIndex.AnchoMaxMm))` |
-| `txtFondoMax` | Número | `If(IsBlank(varEditIndex); ""; Text(varEditIndex.FondoMaxMm))` |
-| `txtCondicionesInstalacion` | Texto multilínea | `If(IsBlank(varEditIndex); ""; varEditIndex.CondicionesInstalacion)` |
-| `ddTension` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.TensionSuministro; "220";"220 V"; "380";"380 V"; "400";"400 V"; "440";"440 V"; "480";"480 V"; "690";"690 V"; "1000";"1000 V"; "Otro"))` |
-| `txtOtraTension` | Número | `If(IsBlank(varEditIndex); ""; Text(varEditIndex.OtraTension))` |
-| `ddSistema` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.SistemaElectrico; "trifasico";"Trifásico"; "monofasico";"Monofásico"; "dc";"Corriente continua (DC)"; "Otro"))` |
-| `txtOtroSistema` | Texto | `If(IsBlank(varEditIndex); ""; varEditIndex.OtroSistemaElectrico)` |
-| `txtPotencia` | Número | `If(IsBlank(varEditIndex); ""; Text(varEditIndex.PotenciaEstimada))` |
-| `ddUnidadPotencia` | DropDown | `If(IsBlank(varEditIndex); "kW"; Switch(varEditIndex.UnidadPotencia; "kW";"kW"; "kVA"))` |
-| `ddFrecuencia` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.Frecuencia; "50";"50 Hz"; "60";"60 Hz"; "Otra"))` |
-| `txtOtraFrecuencia` | Número | `If(IsBlank(varEditIndex); ""; Text(varEditIndex.OtraFrecuencia))` |
-| `cmbProteccionesRequeridas` | ComboBox multi | `DefaultSelectedItems`: `If(IsBlank(varEditIndex); Table(); varEditIndex.ProteccionesRequeridas)` |
-| `cmbMarcasPreferidas` | ComboBox multi | `DefaultSelectedItems`: `If(IsBlank(varEditIndex); Table(); varEditIndex.MarcasPreferidas)` |
-| `ddMaterialGabinete` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.MaterialGabinete; "acero_pintado";"Acero pintado"; "acero_galvanizado";"Acero galvanizado"; "acero_inoxidable";"Acero inoxidable"; "acero_inox_316";"Acero inoxidable 316"; "fibra_vidrio";"Fibra de vidrio"; "poliester";"Poliéster"; "Aluminio"))` |
-| `ddColorGabinete` | DropDown | `If(IsBlank(varEditIndex); "RAL 7035 (gris claro)"; Switch(varEditIndex.ColorGabinete; "7035";"RAL 7035 (gris claro)"; "7016";"RAL 7016 (gris antracita)"; "9016";"RAL 9016 (blanco tráfico)"; "9005";"RAL 9005 (negro)"; "5010";"RAL 5010 (azul)"; "6005";"RAL 6005 (verde)"; "Otro"))` |
-| `ddTipoVentilacion` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.TipoVentilacion; "natural";"Natural"; "forzada";"Forzada (ventilador)"; "sellado";"Sellado (IP alto)"; "Climatizado (aire acondicionado)"))` |
-| `ddExpansionFutura` | DropDown | `If(IsBlank(varEditIndex); Blank(); Switch(varEditIndex.ExpansionFutura; "no";"Sin expansión"; "10";"10%"; "20";"20%"; "30";"30%"; "Otro"))` |
-| `txtObservacionesTablero` | Texto multilínea | `If(IsBlank(varEditIndex); ""; varEditIndex.ObservacionesTablero)` |
+Con las colecciones `colOpc*` (definidas en `App.OnStart`, ver
+[05-canvas-yaml-captura.md](05-canvas-yaml-captura.md#app--colección-e-inicialización)),
+el `Default` de cada `ModernDropdown` es un `LookUp` — más simple y sin
+repetir el par código/etiqueta que ya está en `Items`.
 
-> Las etiquetas usadas en cada `Switch` son las mismas que sus `Items` en
-> [05-canvas-yaml-captura.md](05-canvas-yaml-captura.md) — si cambias una
-> etiqueta ahí, cambia también su par aquí.
+| Control | Tipo | Propiedad | Fórmula |
+|---|---|---|---|
+| `txtNombreTablero` | ModernTextInput | `Default` | `If(IsBlank(varEditIndex); ""; varEditIndex.Nombre)` |
+| `numCantidad` | ModernNumberInput | `Default` | `If(IsBlank(varEditIndex); 1; varEditIndex.Cantidad)` |
+| `ddTipoEntrega` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoEntrega; Value = varEditIndex.TipoEntrega))` |
+| `ddInstalacionNuevaReemplazo` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcInstalacionNuevaReemplazo; Value = varEditIndex.InstalacionNuevaReemplazo))` |
+| `ddTipoTablero` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoTablero; Value = varEditIndex.TipoTablero))` |
+| `txtOtroTipoTablero` | ModernTextInput | `Default` | `If(IsBlank(varEditIndex); ""; varEditIndex.OtroTipoTablero)` |
+| `txtFuncionTablero` | ModernTextInput | `Default` | `If(IsBlank(varEditIndex); ""; varEditIndex.FuncionTablero)` |
+| `txtCargasAAlimentar` | ModernTextInput | `Default` | `If(IsBlank(varEditIndex); ""; varEditIndex.CargasAAlimentar)` |
+| `numNumeroCircuitos` | ModernNumberInput | `Default` | `If(IsBlank(varEditIndex); 0; varEditIndex.NumeroCircuitos)` |
+| `ddUbicacion` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcUbicacion; Value = varEditIndex.Ubicacion))` |
+| `cmbAmbienteEspecial` | ModernCombobox | `DefaultSelectedItems` | `If(IsBlank(varEditIndex); Table(); varEditIndex.AmbienteEspecial)` |
+| `txtOtroAmbiente` | ModernTextInput | `Default` | `If(IsBlank(varEditIndex); ""; varEditIndex.OtroAmbienteEspecial)` |
+| `ddGradoIP` | ModernDropdown (array plano) | `Default` | `If(IsBlank(varEditIndex); Blank(); {Value: varEditIndex.GradoIP})` |
+| `ddGradoIK` | ModernDropdown (array plano) | `Default` | `If(IsBlank(varEditIndex); Blank(); {Value: varEditIndex.GradoIK})` |
+| `ddTipoMontaje` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoMontaje; Value = varEditIndex.TipoMontaje))` |
+| `tglRestricciones` | ModernToggle | **`Checked`** | `If(IsBlank(varEditIndex); false; varEditIndex.RestriccionesDimension)` |
+| `numAltoMax` | ModernNumberInput | `Default` | `If(IsBlank(varEditIndex); 0; varEditIndex.AltoMaxMm)` |
+| `numAnchoMax` | ModernNumberInput | `Default` | `If(IsBlank(varEditIndex); 0; varEditIndex.AnchoMaxMm)` |
+| `numFondoMax` | ModernNumberInput | `Default` | `If(IsBlank(varEditIndex); 0; varEditIndex.FondoMaxMm)` |
+| `txtCondicionesInstalacion` | ModernTextInput | `Default` | `If(IsBlank(varEditIndex); ""; varEditIndex.CondicionesInstalacion)` |
+| `ddTension` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTension; Value = varEditIndex.TensionSuministro))` |
+| `numOtraTension` | ModernNumberInput | `Default` | `If(IsBlank(varEditIndex); 0; varEditIndex.OtraTension)` |
+| `ddSistema` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcSistema; Value = varEditIndex.SistemaElectrico))` |
+| `txtOtroSistema` | ModernTextInput | `Default` | `If(IsBlank(varEditIndex); ""; varEditIndex.OtroSistemaElectrico)` |
+| `numPotencia` | ModernNumberInput | `Default` | `If(IsBlank(varEditIndex); Blank(); varEditIndex.PotenciaEstimada)` |
+| `ddUnidadPotencia` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); LookUp(colOpcUnidadPotencia; Value="kW"); LookUp(colOpcUnidadPotencia; Value = varEditIndex.UnidadPotencia))` |
+| `ddFrecuencia` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcFrecuencia; Value = varEditIndex.Frecuencia))` |
+| `numOtraFrecuencia` | ModernNumberInput | `Default` | `If(IsBlank(varEditIndex); 0; varEditIndex.OtraFrecuencia)` |
+| `cmbProteccionesRequeridas` | ModernCombobox | `DefaultSelectedItems` | `If(IsBlank(varEditIndex); Table(); varEditIndex.ProteccionesRequeridas)` |
+| `cmbMarcasPreferidas` | ModernCombobox | `DefaultSelectedItems` | `If(IsBlank(varEditIndex); Table(); varEditIndex.MarcasPreferidas)` |
+| `ddMaterialGabinete` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcMaterialGabinete; Value = varEditIndex.MaterialGabinete))` |
+| `ddColorGabinete` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); LookUp(colOpcColorGabinete; Value="7035"); LookUp(colOpcColorGabinete; Value = varEditIndex.ColorGabinete))` |
+| `ddTipoVentilacion` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoVentilacion; Value = varEditIndex.TipoVentilacion))` |
+| `ddExpansionFutura` | ModernDropdown | `Default` | `If(IsBlank(varEditIndex); Blank(); LookUp(colOpcExpansionFutura; Value = varEditIndex.ExpansionFutura))` |
+| `txtObservacionesTablero` | ModernTextInput | `Default` | `If(IsBlank(varEditIndex); ""; varEditIndex.ObservacionesTablero)` |
+
+> `ddGradoIP`/`ddGradoIK` no tienen colección `colOpc*` (su `Items` es un
+> array de texto plano) — por eso su `Default` envuelve el código en
+> `{Value: ...}` a mano en vez de usar `LookUp`.
 
 Lógica condicional de `Visible` (qué campo aparece según otro) — sin cambios
 respecto a lo ya definido en el `Items`/`Visible` de cada control en
@@ -213,12 +237,12 @@ respecto a lo ya definido en el `Items`/`Visible` de cada control en
 ### 3.5 Guardar tablero
 
 ```powerfx
-// btnGuardarTablero.OnSelect — antes de esto corre la validación de 3.4b
+// btnGuardarTablero.OnSelect (ModernButton) — antes de esto corre la validación de 3.4b
 With(
     {
         registro: {
             Nombre: txtNombreTablero.Text;
-            Cantidad: Clamp(Value(txtCantidad.Text); 1; 999);
+            Cantidad: numCantidad.Value;
             Orden: If(IsBlank(varEditIndex); CountRows(colTableros); varEditIndex.Orden);
             TipoEntrega: ddTipoEntrega.Selected.Value;
             InstalacionNuevaReemplazo: ddInstalacionNuevaReemplazo.Selected.Value;
@@ -226,27 +250,27 @@ With(
             OtroTipoTablero: If(ddTipoTablero.Selected.Value <> "otro"; Blank(); txtOtroTipoTablero.Text);
             FuncionTablero: txtFuncionTablero.Text;
             CargasAAlimentar: txtCargasAAlimentar.Text;
-            NumeroCircuitos: Value(txtNumeroCircuitos.Text);
+            NumeroCircuitos: numNumeroCircuitos.Value;
             Ubicacion: ddUbicacion.Selected.Value;
             AmbienteEspecial: cmbAmbienteEspecial.SelectedItems;
             OtroAmbienteEspecial: If(Not("otro" in cmbAmbienteEspecial.SelectedItems.Value); Blank(); txtOtroAmbiente.Text);
             GradoIP: ddGradoIP.Selected.Value;
             GradoIK: ddGradoIK.Selected.Value;
             TipoMontaje: ddTipoMontaje.Selected.Value;
-            RestriccionesDimension: tglRestricciones.Value;
-            AltoMaxMm: If(Not(tglRestricciones.Value); Blank(); Value(txtAltoMax.Text));
-            AnchoMaxMm: If(Not(tglRestricciones.Value); Blank(); Value(txtAnchoMax.Text));
-            FondoMaxMm: If(Not(tglRestricciones.Value); Blank(); Value(txtFondoMax.Text));
+            RestriccionesDimension: tglRestricciones.Checked;
+            AltoMaxMm: If(Not(tglRestricciones.Checked); Blank(); numAltoMax.Value);
+            AnchoMaxMm: If(Not(tglRestricciones.Checked); Blank(); numAnchoMax.Value);
+            FondoMaxMm: If(Not(tglRestricciones.Checked); Blank(); numFondoMax.Value);
             CondicionesInstalacion: txtCondicionesInstalacion.Text;
             TensionSuministro: ddTension.Selected.Value;
-            OtraTension: If(ddTension.Selected.Value <> "otro"; Blank(); Value(txtOtraTension.Text));
+            OtraTension: If(ddTension.Selected.Value <> "otro"; Blank(); numOtraTension.Value);
             SistemaElectrico: ddSistema.Selected.Value;
             OtroSistemaElectrico: If(ddSistema.Selected.Value <> "otro"; Blank(); txtOtroSistema.Text);
-            PotenciaEstimada: Value(txtPotencia.Text);
+            PotenciaEstimada: numPotencia.Value;
             UnidadPotencia: ddUnidadPotencia.Selected.Value;
             CorrienteNominal: Value(lblCorriente.Text);
             Frecuencia: ddFrecuencia.Selected.Value;
-            OtraFrecuencia: If(ddFrecuencia.Selected.Value <> "otro"; Blank(); Value(txtOtraFrecuencia.Text));
+            OtraFrecuencia: If(ddFrecuencia.Selected.Value <> "otro"; Blank(); numOtraFrecuencia.Value);
             ProteccionesRequeridas: cmbProteccionesRequeridas.SelectedItems;
             MarcasPreferidas: cmbMarcasPreferidas.SelectedItems;
             MaterialGabinete: ddMaterialGabinete.Selected.Value;
@@ -264,13 +288,13 @@ With(
 );;
 Set(varEditIndex; Blank());;
 Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
-Reset(txtCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
-Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(txtNumeroCircuitos);;
+Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
+Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(numNumeroCircuitos);;
 Reset(ddUbicacion);; Reset(cmbAmbienteEspecial);; Reset(txtOtroAmbiente);;
 Reset(ddGradoIP);; Reset(ddGradoIK);; Reset(ddTipoMontaje);; Reset(tglRestricciones);;
-Reset(txtAltoMax);; Reset(txtAnchoMax);; Reset(txtFondoMax);; Reset(txtCondicionesInstalacion);;
-Reset(ddTension);; Reset(txtOtraTension);; Reset(ddSistema);; Reset(txtOtroSistema);;
-Reset(txtPotencia);; Reset(ddUnidadPotencia);; Reset(ddFrecuencia);; Reset(txtOtraFrecuencia);;
+Reset(numAltoMax);; Reset(numAnchoMax);; Reset(numFondoMax);; Reset(txtCondicionesInstalacion);;
+Reset(ddTension);; Reset(numOtraTension);; Reset(ddSistema);; Reset(txtOtroSistema);;
+Reset(numPotencia);; Reset(ddUnidadPotencia);; Reset(ddFrecuencia);; Reset(numOtraFrecuencia);;
 Reset(cmbProteccionesRequeridas);; Reset(cmbMarcasPreferidas);; Reset(ddMaterialGabinete);;
 Reset(ddColorGabinete);; Reset(ddTipoVentilacion);; Reset(ddExpansionFutura);;
 Reset(txtObservacionesTablero)
@@ -286,6 +310,11 @@ Dos correcciones respecto a una implementación ingenua:
   condición ya no aplica — si no, un tablero que tuvo `TipoTablero="otro"` y
   luego se cambió a `"fuerza"` se guardaría con el texto viejo de
   `OtroTipoTablero` todavía dentro, aunque el campo esté oculto en pantalla.
+
+Nota sobre `ModernNumberInput`: ya no hace falta `Clamp(...)` para `Cantidad`
+— el `Min`/`Max` del propio control (`numCantidad`, ver
+[05-canvas-yaml-captura.md](05-canvas-yaml-captura.md)) impide que el usuario
+escriba fuera de rango, y `.Value` ya llega numérico.
 
 ### 3.4b Validación antes de guardar
 
@@ -304,7 +333,7 @@ If(
         IsBlank(ddTipoMontaje.Selected.Value);
         IsBlank(ddTension.Selected.Value);
         IsBlank(ddSistema.Selected.Value);
-        IsBlank(txtPotencia.Text);
+        IsBlank(numPotencia.Value) || numPotencia.Value <= 0;
         IsBlank(ddFrecuencia.Selected.Value);
         CountRows(cmbProteccionesRequeridas.SelectedItems) = 0;
         IsBlank(ddMaterialGabinete.Selected.Value);
@@ -316,19 +345,23 @@ If(
 )
 ```
 
+`numPotencia.Value <= 0` ya valida que la potencia sea mayor a cero, no solo
+que no esté vacía — más estricto que el `IsBlank` que hacía el `TextInput`
+clásico.
+
 ### 3.6 Nuevo tablero
 
 ```powerfx
-// btnNuevoTablero.OnSelect
+// btnNuevoTablero.OnSelect (ModernButton)
 Set(varEditIndex; Blank());;
 Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
-Reset(txtCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
-Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(txtNumeroCircuitos);;
+Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
+Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(numNumeroCircuitos);;
 Reset(ddUbicacion);; Reset(cmbAmbienteEspecial);; Reset(txtOtroAmbiente);;
 Reset(ddGradoIP);; Reset(ddGradoIK);; Reset(ddTipoMontaje);; Reset(tglRestricciones);;
-Reset(txtAltoMax);; Reset(txtAnchoMax);; Reset(txtFondoMax);; Reset(txtCondicionesInstalacion);;
-Reset(ddTension);; Reset(txtOtraTension);; Reset(ddSistema);; Reset(txtOtroSistema);;
-Reset(txtPotencia);; Reset(ddUnidadPotencia);; Reset(ddFrecuencia);; Reset(txtOtraFrecuencia);;
+Reset(numAltoMax);; Reset(numAnchoMax);; Reset(numFondoMax);; Reset(txtCondicionesInstalacion);;
+Reset(ddTension);; Reset(numOtraTension);; Reset(ddSistema);; Reset(txtOtroSistema);;
+Reset(numPotencia);; Reset(ddUnidadPotencia);; Reset(ddFrecuencia);; Reset(numOtraFrecuencia);;
 Reset(cmbProteccionesRequeridas);; Reset(cmbMarcasPreferidas);; Reset(ddMaterialGabinete);;
 Reset(ddColorGabinete);; Reset(ddTipoVentilacion);; Reset(ddExpansionFutura);;
 Reset(txtObservacionesTablero)
@@ -343,12 +376,13 @@ botón aparte.
 `galTableros.Selected`:
 
 ```powerfx
-// btnEliminarTablero.OnSelect
+// btnEliminarTablero.OnSelect (ModernButton)
 UpdateContext({locItemAEliminar: galTableros.Selected; mostrarConfirmarEliminar: true})
 ```
 
-Y un **`Group`/popup** `grpConfirmarEliminar` (oculto por defecto, `Visible:
-mostrarConfirmarEliminar`) con texto "¿Eliminar este tablero?" y dos botones:
+Y un **`Group`/popup** `grpConfirmarEliminar` (clásico — oculto por defecto,
+`Visible: mostrarConfirmarEliminar`) con un `ModernText` "¿Eliminar este
+tablero?" y dos `ModernButton`:
 
 ```powerfx
 // btnConfirmarSi.OnSelect
@@ -358,13 +392,13 @@ If(
     locItemAEliminar = varEditIndex;
     Set(varEditIndex; Blank());;
     Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
-    Reset(txtCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
-    Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(txtNumeroCircuitos);;
+    Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
+    Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(numNumeroCircuitos);;
     Reset(ddUbicacion);; Reset(cmbAmbienteEspecial);; Reset(txtOtroAmbiente);;
     Reset(ddGradoIP);; Reset(ddGradoIK);; Reset(ddTipoMontaje);; Reset(tglRestricciones);;
-    Reset(txtAltoMax);; Reset(txtAnchoMax);; Reset(txtFondoMax);; Reset(txtCondicionesInstalacion);;
-    Reset(ddTension);; Reset(txtOtraTension);; Reset(ddSistema);; Reset(txtOtroSistema);;
-    Reset(txtPotencia);; Reset(ddUnidadPotencia);; Reset(ddFrecuencia);; Reset(txtOtraFrecuencia);;
+    Reset(numAltoMax);; Reset(numAnchoMax);; Reset(numFondoMax);; Reset(txtCondicionesInstalacion);;
+    Reset(ddTension);; Reset(numOtraTension);; Reset(ddSistema);; Reset(txtOtroSistema);;
+    Reset(numPotencia);; Reset(ddUnidadPotencia);; Reset(ddFrecuencia);; Reset(numOtraFrecuencia);;
     Reset(cmbProteccionesRequeridas);; Reset(cmbMarcasPreferidas);; Reset(ddMaterialGabinete);;
     Reset(ddColorGabinete);; Reset(ddTipoVentilacion);; Reset(ddExpansionFutura);;
     Reset(txtObservacionesTablero)
@@ -388,9 +422,9 @@ fórmula si se sigue referenciando después del `Remove`.
   [dataverse/05](../dataverse/05-construir-canvas-captura.md)) arriba de todo.
 - Adjuntos a nivel solicitud (specs técnicas, fotos del sitio) y
   `txtObservacionesProyecto`.
-- Botón **Enviar solicitud** — fórmula completa (validación de "al menos un
-  tablero", `Patch` de la cabecera, `ForAll`/`Patch` de cada tablero con el
-  mapeo Choice → Dataverse, y navegación a confirmación) en la sección
+- **`btnEnviar`** (`ModernButton@1.0.0`) — fórmula completa (validación de "al
+  menos un tablero", `Patch` de la cabecera, `ForAll`/`Patch` de cada tablero
+  con el mapeo Choice → Dataverse, y navegación a confirmación) en la sección
   **"Envío — escribir en Dataverse (Patch)"** de
   [05-canvas-yaml-captura.md](05-canvas-yaml-captura.md).
 
@@ -406,12 +440,12 @@ fórmula si se sigue referenciando después del `Remove`.
 ## 5. Pantalla de confirmación (`scrConfirmacion`)
 
 ```powerfx
-// lblConfirmacion.Text
+// lblConfirmacion.Text (ModernText)
 "Solicitud enviada correctamente. Código: " & varSolicitud.ReferenceCode
 ```
-Botón **"Registrar otra solicitud"** → `Navigate(scrContactoProyecto)`. Esta
-pantalla **no** lleva la barra de pestañas — es un estado terminal fuera del
-flujo de las 3 secciones.
+Botón **"Registrar otra solicitud"** (`ModernButton@1.0.0`) →
+`Navigate(scrContactoProyecto)`. Esta pantalla **no** lleva la barra de
+pestañas — es un estado terminal fuera del flujo de las 3 secciones.
 
 ---
 
@@ -421,8 +455,9 @@ Revisando este diseño (galería + formulario en una pantalla, ~37 campos por
 tablero), esto es lo que conviene resolver antes de darlo por terminado:
 
 ### Ya incorporado en esta guía
-- **Validación de campos obligatorios** antes de guardar un tablero (3.4b) —
-  sin esto se pueden guardar tableros vacíos.
+- **Validación de campos obligatorios** antes de guardar un tablero (3.4b),
+  incluyendo `PotenciaEstimada > 0` (no solo "no vacío") — sin esto se pueden
+  guardar tableros vacíos o con potencia cero.
 - **Confirmación antes de eliminar** (3.7) — un ícono de basurero sin
   confirmación es fácil de tocar por error en una lista larga.
 - **Indicador de modo** "Nuevo tablero" / "Editando: X" (3.2) — sin esto no
@@ -431,6 +466,11 @@ tablero), esto es lo que conviene resolver antes de darlo por terminado:
 - **Limpieza de campos "Otro"/condicionales** que quedaron ocultos pero con
   datos viejos (3.5) — si no, se guardan datos huérfanos e inconsistentes con
   el resto del registro.
+- **Colecciones de opciones reutilizables** (`colOpc*`) — el `Default` de
+  3.4 ya usa `LookUp` contra ellas en vez de repetir cada par código/etiqueta
+  en un `Switch`; una sola fuente de verdad compartida con `Items`.
+- **Rangos numéricos** — `Min`/`Max` nativos de `ModernNumberInput`
+  (`numCantidad`: 1-999) reemplazan el `Clamp(...)` manual.
 
 ### Recomendado revisar al construir
 - **El orden de los `Reset()` importa** cuando un control depende de otro
@@ -443,18 +483,12 @@ tablero), esto es lo que conviene resolver antes de darlo por terminado:
   desbordamiento/scroll (la propiedad exacta depende de tu versión de Studio:
   contenedores de diseño automático suelen tener `Overflow`/scroll nativo; si
   el tuyo no, envuélvelo en un control de desplazamiento).
-- **Rangos numéricos adicionales** — ya se acotó `Cantidad` con `Clamp(...;
-  1; 999)`; considera lo mismo para `NumeroCircuitos` (≥0) y validar
-  `PotenciaEstimada > 0` en 3.4b, no solo que no esté vacío.
+- **Controles Modern en evolución:** si al pegar una fórmula el estudio marca
+  una propiedad como inexistente, revisa la página de ese control en
+  Microsoft Learn (enlaces al final de 05-canvas-yaml-captura.md) — Microsoft
+  los sigue actualizando y algún nombre puede haber cambiado.
 
 ### Mejoras opcionales (no bloquean la construcción)
-- **Colecciones de opciones reutilizables:** en vez de repetir cada par
-  código/etiqueta en el `Items` del dropdown y de nuevo en su `Switch` de
-  `Default` (como en la tabla de 3.4), define cada lista como colección en
-  `App.OnStart` (`ClearCollect(colOpcTipoEntrega; Table(...))`) y usa
-  `Items: colOpcTipoEntrega` + `Default: LookUp(colOpcTipoEntrega; Value =
-  varEditIndex.TipoEntrega).Label`. Evita mantener el mismo texto en dos
-  lugares. Dilo si quieres que lo reescriba así.
 - **Duplicar tablero** — un botón que hace `Collect(colTableros; {...los
   mismos campos del seleccionado..., Nombre: "Copia de " & ThisItem.Nombre})`;
   útil cuando un proyecto tiene varios tableros casi idénticos.
@@ -477,10 +511,10 @@ tablero), esto es lo que conviene resolver antes de darlo por terminado:
 
 ## 7. Equivalencias con el formulario original
 
-| Filament / Livewire original | Power Apps Canvas (maestro-detalle) |
+| Filament / Livewire original | Power Apps Canvas (maestro-detalle, Modern controls) |
 |---|---|
-| Wizard de 3 pasos | `scrContactoProyecto` → `scrTableroForm` (maestro-detalle) → `scrDocumentacion` → `scrConfirmacion`, con barra de pestañas para saltar entre las 3 primeras |
-| Modal "Agregar/Editar tablero" repetible | Galería izquierda + formulario derecho en la misma pantalla, gateados por `varEditIndex`; Editar/Eliminar arriba de la galería actúan sobre `galTableros.Selected` |
+| Wizard de 3 pasos | `scrContactoProyecto` → `scrTableroForm` (maestro-detalle) → `scrDocumentacion` → `scrConfirmacion`, con `ModernTabList` para saltar entre las 3 primeras |
+| Modal "Agregar/Editar tablero" repetible | Galería izquierda (clásica) + formulario derecho (Modern) en la misma pantalla, gateados por `varEditIndex`; Editar/Eliminar arriba de la galería actúan sobre `galTableros.Selected` |
 | `->visible(fn($get)=>...)` condicionales | propiedad `Visible` de cada control (ver 05-canvas-yaml-captura.md) |
 | `recalculateCurrent()` | `lblCorriente.Text` (fórmula `With(...)`, ver 05) |
 | Opciones de IP según interior/exterior | `Switch()` en `ddGradoIP.Items` (ver 05) |

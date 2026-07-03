@@ -19,7 +19,7 @@ Power Platform.
 ## Arquitectura (actual — Dataverse)
 
 ```
-Captura:        Power Apps Canvas (reapuntada a Dataverse)
+Captura:        Power Apps Canvas, controles Modern (reapuntada a Dataverse)
 Datos:          Dataverse — tablas Solicitud, SolicitudTablero (relación 1:N)
 Estados:        Business Process Flow + security roles (nativos)
 Automatización: Power Automate (notificaciones + acuse)
@@ -54,9 +54,10 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 2. **Tablas Dataverse** — `Solicitud`, `SolicitudTablero` (relación 1:N), Choices,
    `reference_code` como Autonumber, auditoría activada. Esquema en
    [docs/dataverse/01-tablas.md](docs/dataverse/01-tablas.md).
-3. **App Canvas de captura** — 4 pantallas navegadas por una barra de pestañas
-   compartida (Contacto y Proyecto / Tableros / Documentación, + confirmación
-   fuera del flujo). Construcción clic por clic en
+3. **App Canvas de captura** — controles **Modern** (Fluent), 4 pantallas
+   navegadas por un `ModernTabList` compartido (Contacto y Proyecto / Tableros
+   / Documentación, + confirmación fuera del flujo). Construcción clic por
+   clic en
    [docs/dataverse/05-construir-canvas-captura.md](docs/dataverse/05-construir-canvas-captura.md)
    (app, pestañas, Pantalla 1, Documentación, confirmación); la **Pantalla 2
    (Tableros)** es maestro-detalle en una sola pantalla, documentada completa
@@ -86,6 +87,11 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 - [x] Pantalla 2 (tableros) maestro-detalle en una sola pantalla — diseño final,
       Editar/Eliminar arriba de la galería, documentado completo con
       `Default`/`Reset` de los 35 campos, validación y dos bugs corregidos (`powerapps/02`)
+- [x] Migrado a controles **Modern** de Power Apps (verificado contra Microsoft
+      Learn): `ModernButton`, `ModernTextInput`, `ModernNumberInput`,
+      `ModernDropdown`, `ModernCombobox`, `ModernToggle`, `ModernDatePicker`,
+      `ModernText`, `ModernTabList` — `Group`/`Gallery` quedan clásicos (sin
+      versión Modern disponible)
 - [ ] Solución `Axon Solicitudes` creada (construcción real pendiente)
 - [ ] Tablas Dataverse creadas
 - [ ] App Canvas de captura
