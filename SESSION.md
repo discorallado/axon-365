@@ -6,7 +6,7 @@
 ---
 
 ## Última actualización
-2026-07-01 (Migración a controles Modern de Power Apps en el wizard Canvas)
+2026-07-01 (YAML completo consolidado para pegar de una vez en Studio)
 
 ## Qué es esto
 Migración del **Módulo de Solicitudes de Tableros Eléctricos** desde el PMIS
@@ -119,6 +119,18 @@ original queda congelado como proyecto personal y NO se toca.
       quedan clásicos (sin versión Modern). `docs/powerapps/04-app-gestion-interna.md`
       (superseded, SharePoint, fuera del build activo) no se tocó — avisar si se
       quiere modernizar también. ✅
+- [x] **`docs/powerapps/06-yaml-completo-para-pegar.md` (nuevo, esta sesión):**
+      consolida `App` + las 4 pantallas en un solo YAML (`.pa.yaml`, esquema
+      actual, no el "preview" retirado) para probar pegado masivo en Studio
+      (clic derecho en el árbol → Pegar) o usar con Git integration/pac CLI.
+      Verificado: balance de paréntesis/llaves y consistencia de indentación
+      YAML con un script — **no** verificado contra un Studio real (no tengo
+      acceso). Aviso explícito al inicio del doc sobre esa limitación y sobre
+      una contradicción real en la documentación de Microsoft (la página de
+      "code view" dice que copiar/pegar sigue activo; la página de esquemas
+      pa.yaml dice que el formato que usaba esa función está retirado). Si el
+      pegado falla, caer de vuelta a `dataverse/05`/`powerapps/02` (clic por
+      clic, sin depender de esta función). ✅
 - [ ] Construir de verdad en make.powerapps.com: Solución → tablas → choices → roles
       (`00`) → Business Rules → vistas → formularios → app (`04`) → Canvas de captura
       con pestañas + maestro-detalle, controles Modern

@@ -43,7 +43,7 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 | `docs/adr/` | Decisiones: `0001` SharePoint (superseded), `0002` pivote a Dataverse |
 | `docs/dataverse/` | **Vigente** — `00` guía mecánica de construcción (Solución/tablas/roles), `01` tablas, `02` BPF + security roles, `03` Plan Developer y despliegue, `04` Business Rules/vistas/formularios/app Model-driven, `05` construir el wizard Canvas (4 pantallas + barra de pestañas compartida) en el navegador |
 | `docs/sharepoint/` | ⚠️ Superseded — esquema de columnas/choices, útil solo como referencia del modelo |
-| `docs/powerapps/` | `02` **Pantalla 2 (tableros), maestro-detalle en una sola pantalla — diseño final**, `04` gestión, `05` YAML/fórmulas de captura (Dataverse) |
+| `docs/powerapps/` | `02` **Pantalla 2 (tableros), maestro-detalle en una sola pantalla — diseño final**, `04` gestión, `05` YAML/fórmulas de captura (Dataverse), `06` YAML completo consolidado (app entera, para pegar de una vez) |
 | `docs/powerautomate/` | Flujos: F-1 vigente; F-2 → reemplazado por Business Process Flow |
 
 ## Orden de construcción recomendado (Dataverse)
@@ -92,6 +92,9 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
       `ModernDropdown`, `ModernCombobox`, `ModernToggle`, `ModernDatePicker`,
       `ModernText`, `ModernTabList` — `Group`/`Gallery` quedan clásicos (sin
       versión Modern disponible)
+- [x] YAML completo consolidado (`App` + las 4 pantallas en un solo archivo)
+      para pegado masivo en Studio o Git integration/CLI — best-effort, sin
+      poder validarlo en un Studio real (`powerapps/06`)
 - [ ] Solución `Axon Solicitudes` creada (construcción real pendiente)
 - [ ] Tablas Dataverse creadas
 - [ ] App Canvas de captura
