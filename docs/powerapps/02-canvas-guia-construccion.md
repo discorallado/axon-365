@@ -1,5 +1,17 @@
 # Guía de construcción — Power App Canvas de captura (maestro-detalle, Modern controls)
 
+> ⚠️ **Superseded.** El diseño de "maestro-detalle en una sola pantalla" que
+> describe este documento (galería + ~35 campos en un panel al lado) resultó
+> muy denso visualmente para trabajar en el editor de Power Apps. Se
+> reemplazó por **4 pantallas separadas** para el formulario del tablero
+> (una por grupo de campos), más una galería a ancho completo — ver
+> [dataverse/05-construir-canvas-captura.md](../dataverse/05-construir-canvas-captura.md)
+> y el YAML completo en
+> [06-yaml-completo-para-pegar.md](06-yaml-completo-para-pegar.md). Este
+> documento queda como referencia histórica de las fórmulas (`Default`,
+> validación, `Reset`, el `With(){registro}` de guardar) — esas mismas
+> fórmulas se reusaron, solo cambia en qué pantalla vive cada campo.
+
 App que reemplaza al `PublicFormWizard` de Filament, sobre **Dataverse**, con
 los **controles Modern** de Power Apps (Fluent). Arquitectura final: **3
 pantallas navegadas por pestañas** (Contacto y Proyecto / Tableros /
