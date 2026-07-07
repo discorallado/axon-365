@@ -84,7 +84,49 @@ App:
   Properties:
     OnStart: |
       =Set(varEditIndex; Blank());;
-      ClearCollect(colTableros; []);;
+      // colTableros vacía PERO tipada: define todas las columnas y sus tipos
+      // (esquema de cada fila = esquema de varEditIndex al editar), para que
+      // varEditIndex.Campo y los IsBlank/Default no den "columna inexistente"
+      // antes de agregar el primer tablero. Filter(...; false) = 0 filas, con esquema.
+      ClearCollect(colTableros; Filter(Table({
+        Nombre:                    "";
+        Cantidad:                  0;
+        Orden:                     0;
+        TipoEntrega:               "";
+        InstalacionNuevaReemplazo: "";
+        TipoTablero:               "";
+        OtroTipoTablero:           "";
+        FuncionTablero:            "";
+        CargasAAlimentar:          "";
+        NumeroCircuitos:           0;
+        Ubicacion:                 "";
+        AmbienteEspecial:          Filter(Table({Value:""; Label:""}); false);
+        OtroAmbienteEspecial:      "";
+        GradoIP:                   "";
+        GradoIK:                   "";
+        TipoMontaje:               "";
+        RestriccionesDimension:    false;
+        AltoMaxMm:                 0;
+        AnchoMaxMm:                0;
+        FondoMaxMm:                0;
+        CondicionesInstalacion:    "";
+        TensionSuministro:         "";
+        OtraTension:               0;
+        SistemaElectrico:          "";
+        OtroSistemaElectrico:      "";
+        PotenciaEstimada:          0;
+        UnidadPotencia:            "";
+        CorrienteNominal:          0;
+        Frecuencia:                "";
+        OtraFrecuencia:            0;
+        ProteccionesRequeridas:    Filter(Table({Value:""; Label:""}); false);
+        MarcasPreferidas:          Filter(Table({Value:""; Label:""}); false);
+        MaterialGabinete:          "";
+        ColorGabinete:             "";
+        TipoVentilacion:           "";
+        ExpansionFutura:           "";
+        ObservacionesTablero:      ""
+      }); false));;
 
       ClearCollect(colOpcIngenieriaPor; Table(
         {Value:"csenergy"; Label:"CSEnergy la provee"};
