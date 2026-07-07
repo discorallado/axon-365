@@ -44,7 +44,7 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 | `docs/adr/` | Decisiones: `0001` SharePoint (superseded), `0002` pivote a Dataverse |
 | `docs/dataverse/` | **Vigente** — `00` guía mecánica de construcción (Solución/tablas/roles), `01` tablas, `02` BPF + security roles, `03` Plan Developer y despliegue, `04` Business Rules/vistas/formularios/app Model-driven, `05` construir el wizard Canvas (4 pantallas + barra de pestañas compartida) en el navegador |
 | `docs/sharepoint/` | ⚠️ Superseded — esquema de columnas/choices, útil solo como referencia del modelo |
-| `docs/powerapps/` | `02` **Pantalla 2 (tableros), maestro-detalle en una sola pantalla — diseño final**, `04` gestión, `05` YAML/fórmulas de captura (Dataverse) |
+| `docs/powerapps/` | `02` **Pantalla 2 (tableros), maestro-detalle en una sola pantalla**, `04` gestión, `05` YAML/fórmulas de captura (Dataverse), `06` **sub-formulario del tablero en varias pantallas con sub-pestañas** (variante de `02`) |
 | `docs/powerautomate/` | Flujos: F-1 vigente; F-2 → reemplazado por Business Process Flow |
 
 ## Orden de construcción recomendado (Dataverse)
@@ -88,6 +88,9 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 - [x] Pantalla 2 (tableros) maestro-detalle en una sola pantalla — diseño final,
       Editar/Eliminar arriba de la galería, documentado completo con
       `Default`/`Reset` de los 35 campos, validación y dos bugs corregidos (`powerapps/02`)
+- [x] Variante del sub-formulario en **varias pantallas con sub-pestañas**
+      (`scrTableros` galería + `scrTableroPaso1..4`, `ModernTabList` de pasos,
+      volver a la galería al Guardar) — código completo para copiar/pegar (`powerapps/06`)
 - [x] Migrado a controles **Modern** de Power Apps (verificado contra Microsoft
       Learn): `ModernButton`, `ModernTextInput`, `ModernNumberInput`,
       `ModernDropdown`, `ModernCombobox`, `ModernToggle`, `ModernDatePicker`,

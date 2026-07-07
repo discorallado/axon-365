@@ -175,6 +175,14 @@ cosas que le faltan para encajar en el flujo de pestañas:
 > §3.1 y §3.7 de ese documento para las fórmulas exactas, incluyendo el
 > `DisplayMode` que los deshabilita cuando no hay ninguna fila seleccionada.
 
+> **Variante en varias pantallas (sub-pestañas):** para separar el
+> sub-formulario del tablero en 4 pantallas reales (`scrTableros` galería +
+> `scrTableroPaso1..4`) navegadas por **sub-pestañas**, y volver a la galería
+> al Guardar, construye según
+> [docs/powerapps/06-subformulario-multipantalla.md](../powerapps/06-subformulario-multipantalla.md)
+> en lugar de la pantalla única de 02. Todo lo demás (barra de pestañas
+> principal, Pantallas 1/3/confirmación) no cambia.
+
 ✅ *Verificable:* **Agregar Tablero** limpia el panel derecho (modo "nuevo");
 seleccionar una fila de la galería y tocar **Editar** carga sus valores;
 **Guardar tablero** lo agrega/actualiza en la galería; **Siguiente** con la
