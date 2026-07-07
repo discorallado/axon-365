@@ -6,7 +6,7 @@
 ---
 
 ## Última actualización
-2026-07-01 (Migración a controles Modern de Power Apps en el wizard Canvas)
+2026-07-01 (Pantalla de tableros dividida en 4 pantallas; probado en Studio real)
 
 ## Qué es esto
 Migración del **Módulo de Solicitudes de Tableros Eléctricos** desde el PMIS
@@ -119,10 +119,36 @@ original queda congelado como proyecto personal y NO se toca.
       quedan clásicos (sin versión Modern). `docs/powerapps/04-app-gestion-interna.md`
       (superseded, SharePoint, fuera del build activo) no se tocó — avisar si se
       quiere modernizar también. ✅
+- [x] **`docs/powerapps/06-yaml-completo-para-pegar.md` (nuevo, esta sesión):**
+      consolida `App` + las pantallas en un solo YAML (`.pa.yaml`, esquema
+      actual, no el "preview" retirado) para probar pegado masivo en Studio
+      (clic derecho en el árbol → Pegar) o usar con Git integration/pac CLI.
+      **El usuario ya lo probó en su Studio real y el pegado funcionó** —
+      confirmó versiones concretas de control (`ModernDropdown@1.0.2`,
+      `ModernTextInput@1.1.1`, `ModernNumberInput@1.1.1`, `ModernCombobox@1.1.1`,
+      `Gallery@2.15.0` + `Variant`, `GroupContainer` + `Variant: "ManualLayout"`),
+      que quedaron adoptadas en el doc reemplazando los `@1.0.0` genéricos
+      anteriores.
+- [x] **Decisión de arquitectura (esta sesión, feedback directo del usuario tras
+      probarlo): la pantalla de tableros vuelve a dividirse en pantallas
+      separadas — el panel único de ~35 campos ("maestro-detalle en una sola
+      pantalla") resultaba muy denso/grotesco visualmente para trabajar en el
+      editor.** Arquitectura final: **8 pantallas** —
+      `scrContactoProyecto` / `scrTableros` (galería, ancho completo) /
+      `scrTableroForm` `2a` `2b` `3` (las 4 etapas del formulario del tablero,
+      sin barra de pestañas, con Atrás/Siguiente y validación repartida por
+      paso) / `scrDocumentacion` / `scrConfirmacion`. `docs/dataverse/05` y
+      `docs/powerapps/06` reescritos para esta arquitectura;
+      `docs/powerapps/02` (el maestro-detalle de un panel) marcado
+      **superseded**, se conserva como referencia histórica de las fórmulas
+      (`Default`/`Reset`/validación/guardar), que se reusaron tal cual — solo
+      cambió en qué pantalla vive cada campo. En el cambio también se adoptó
+      el fix del usuario: `tglRestricciones` (Toggle) → `ddRestricciones`
+      (Dropdown Sí/No, colección `colOpcSiNo`). ✅
 - [ ] Construir de verdad en make.powerapps.com: Solución → tablas → choices → roles
       (`00`) → Business Rules → vistas → formularios → app (`04`) → Canvas de captura
-      con pestañas + maestro-detalle, controles Modern
-      (`dataverse/05` + `powerapps/02` + `powerapps/05`) → flujo real-time de estados
+      con pestañas + 4 pantallas del tablero, controles Modern
+      (`dataverse/05` + `powerapps/06`) → flujo real-time de estados
       → Power Automate F-1.
 - [x] Repo en GitHub: `discorallado/axon-365` (privado). ✅
 

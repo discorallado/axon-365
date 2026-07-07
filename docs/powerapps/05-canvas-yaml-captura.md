@@ -32,16 +32,22 @@ de comportamiento:
 
 ## Cómo usarlo
 
-Este YAML no se pega directo en cualquier vista del estudio. Tres vías:
+Este YAML no se pega directo en cualquier vista del estudio. Cuatro vías:
 
 1. **Manual en el navegador (recomendada para este proyecto — sin Git ni CLI):**
    inserta cada control desde el estudio (los controles Modern están bajo
    **Insertar → Modern**) y pega solo la fórmula (lo que va después del `=`)
    en la propiedad indicada. Guía clic por clic en
    [docs/dataverse/05-construir-canvas-captura.md](../dataverse/05-construir-canvas-captura.md).
-2. **Git integration (para equipos con repo Git ya conectado a la solución):**
+2. **Todo de una vez (best-effort):** [06-yaml-completo-para-pegar.md](06-yaml-completo-para-pegar.md)
+   consolida la app entera (`App` + las 4 pantallas) en un solo YAML, para
+   probar el pegado masivo de Studio (clic derecho en el árbol → Pegar) o para
+   usar con Git integration/CLI de una vez. Lee el aviso al inicio de ese
+   documento antes de intentarlo — no pude confirmar al 100% que el pegado
+   masivo siga funcionando igual en la versión actual de Studio.
+3. **Git integration (para equipos con repo Git ya conectado a la solución):**
    los archivos `Src/*.pa.yaml` son editables y se sincronizan al estudio.
-3. **Power Platform CLI:**
+4. **Power Platform CLI:**
    ```
    pac canvas pack --sources ./Src --msapp Captura.msapp
    ```
