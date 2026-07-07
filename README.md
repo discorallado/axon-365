@@ -44,7 +44,7 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 | `docs/adr/` | Decisiones: `0001` SharePoint (superseded), `0002` pivote a Dataverse |
 | `docs/dataverse/` | **Vigente** — `00` guía mecánica de construcción (Solución/tablas/roles), `01` tablas, `02` BPF + security roles, `03` Plan Developer y despliegue, `04` Business Rules/vistas/formularios/app Model-driven, `05` construir el wizard Canvas (8 pantallas: 3 con pestañas + 4 pasos del tablero + confirmación) en el navegador |
 | `docs/sharepoint/` | ⚠️ Superseded — esquema de columnas/choices, útil solo como referencia del modelo |
-| `docs/powerapps/` | `02` ⚠️ superseded (maestro-detalle en un panel, referencia histórica de fórmulas), `04` gestión, `05` YAML/fórmulas de captura (Dataverse), `06` **YAML completo consolidado — diseño final de 8 pantallas, probado en Studio real** |
+| `docs/powerapps/` | `02` ⚠️ superseded (maestro-detalle en un panel, referencia histórica de fórmulas), `04` gestión, `05` YAML/fórmulas de captura (Dataverse), `06` **YAML completo consolidado — diseño final de 8 pantallas, probado en Studio real, con sub-pestañas en el tablero + capa a prueba de tontos** |
 | `docs/powerautomate/` | Flujos: F-1 vigente; F-2 → reemplazado por Business Process Flow |
 
 ## Orden de construcción recomendado (Dataverse)
@@ -96,6 +96,11 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 - [x] YAML completo consolidado (`App` + las 8 pantallas en un solo archivo),
       **probado con éxito en Studio real** — para pegado masivo en Studio o
       Git integration/CLI (`powerapps/06`)
+- [x] Tablero con **sub-pestañas** (`navSubPasos` en las 4 pantallas del tablero,
+      además de Atrás/Siguiente) + **capa a prueba de tontos**: fórmulas de
+      completitud en `App.Formulas`, banner de pendientes en vivo, error por
+      paso (`varValidarTablero`), Cancelar/Atrás con confirmación, y Guardar que
+      salta al primer paso incompleto (`powerapps/06`)
 - [ ] Solución `Axon Solicitudes` creada (construcción real pendiente)
 - [ ] Tablas Dataverse creadas
 - [ ] App Canvas de captura

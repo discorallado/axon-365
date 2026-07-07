@@ -21,14 +21,6 @@ Este documento es la referencia completa de la **Pantalla 2 — Tableros**
 (`scrTableroForm`), construida como **maestro-detalle en una sola pantalla**:
 galería de tableros a la izquierda + formulario completo a la derecha.
 
-> **Variante en varias pantallas (sub-pestañas):** si prefieres separar el
-> sub-formulario del tablero en **4 pantallas reales** (una por etapa),
-> navegadas por una barra de **sub-pestañas**, y volver a la galería al
-> Guardar, usa [06-subformulario-multipantalla.md](06-subformulario-multipantalla.md).
-> Reutiliza toda la lógica de este documento (galería, `colTableros`,
-> `varEditIndex`, `Default`/`Reset`, validación, envío) — solo reparte los ~35
-> campos en pantallas y agrega la navegación. Elige **una** de las dos
-> variantes, no ambas.
 
 > **Dónde está el resto:** la app completa (las 4 pantallas, la barra de
 > pestañas compartida, y las Pantallas 1 y 3) se arma siguiendo

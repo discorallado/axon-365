@@ -25,12 +25,15 @@ clásicos). Mapeo completo clásico → Modern en
 - **`scrTableroForm` / `scrTableroForm2a` / `scrTableroForm2b` / `scrTableroForm3`**
   — las ~37 columnas del tablero repartidas en **4 pantallas** (una por grupo
   de campos: Identificación / Ubicación-ambiente-montaje / Eléctrico / Diseño
-  constructivo), con botones Atrás/Siguiente — **no** llevan la barra de
-  pestañas, son un sub-flujo lineal que se entra y sale desde `scrTableros`
+  constructivo). No llevan la barra de pestañas principal, pero **sí una barra
+  de sub-pestañas** (`navSubPasos`) para saltar directo entre las 4 etapas,
+  además de los botones Atrás/Siguiente. Se entra y sale desde `scrTableros`
   (Agregar o Editar → paso 1; Guardar tablero en el paso 4 → vuelve a
-  `scrTableros`). Se decidió así (en vez de un solo panel con todo junto)
-  porque 35 campos en un panel resultaban muy densos para trabajar en el
-  editor. YAML completo de las 4 en
+  `scrTableros`; Cancelar/Atrás piden confirmación). Traen la **capa a prueba
+  de tontos** (banner de pendientes, error por paso, Guardar que salta al primer
+  hueco — ver la sección "Capa a prueba de tontos" del 06). Se decidió repartir
+  en 4 pantallas (en vez de un solo panel con todo junto) porque 35 campos en un
+  panel resultaban muy densos para el editor. YAML completo de las 4 en
   [docs/powerapps/06-yaml-completo-para-pegar.md](../powerapps/06-yaml-completo-para-pegar.md).
 - **`scrDocumentacion`** — Adjuntos, observaciones y el botón **Enviar
   solicitud**. Pestaña.

@@ -28,15 +28,35 @@ scrContactoProyecto ─Siguiente→ scrTableros ─Agregar/Editar→ scrTableroF
 scrTableros ─Siguiente→ scrDocumentacion ─Enviar→ scrConfirmacion
 ```
 
-- **Pestañas** (`ModernTabList`, `navPestanas`) solo en las 3 pantallas
-  "principales": `scrContactoProyecto`, `scrTableros`, `scrDocumentacion`.
-- Las **4 pantallas del tablero** (`scrTableroForm`, `2a`, `2b`, `3`) son un
-  sub-flujo lineal sin pestañas — se entra desde `scrTableros` (Agregar o
-  Editar) y se sale por `scrTableros` (Guardar tablero, al final del paso 4).
-  Cada una valida **solo sus propios campos** antes de dejar avanzar.
+- **Pestañas principales** (`ModernTabList`, `navPestanas`) solo en las 3
+  pantallas "principales": `scrContactoProyecto`, `scrTableros`,
+  `scrDocumentacion`.
+- Las **4 pantallas del tablero** (`scrTableroForm`, `2a`, `2b`, `3`) llevan su
+  propia **barra de sub-pestañas** (`ModernTabList`, `navSubPasos` — "1.
+  Identificación / 2. Ubicación y montaje / 3. Eléctrico / 4. Constructivo")
+  para saltar directo a cualquier etapa, **además** de los botones
+  Atrás/Siguiente para el recorrido lineal. Se entra desde `scrTableros`
+  (Agregar o Editar) y se sale por `scrTableros` (Guardar tablero en el paso 4,
+  o **Cancelar** con confirmación en cualquier paso).
 - Los valores de los controles **se conservan** al navegar entre las 4
   pantallas del tablero — Power Apps no destruye los controles de pantallas
-  no visibles, así que no hace falta guardar nada en variables intermedias.
+  no visibles, así que un control del paso 4 puede leer uno del paso 1, y no
+  hace falta guardar nada en variables intermedias.
+
+### Capa a prueba de tontos (foolproof)
+
+Difícil equivocarse: (1) fórmulas con nombre en **`App.Formulas`**
+(`pasoIdentificacionOK`…`tableroCompleto`) — ver la sección **App — Formulas**;
+(2) **banner de pendientes** (`lblPendientes`) en cada paso, en vivo, que dice
+qué etapas faltan y se pone verde al completar; (3) **error por paso**
+(`lblErroresPaso`) que, tras un intento fallido (`varValidarTablero`), lista en
+rojo los campos que faltan **en esa pantalla**; (4) cada **Siguiente** valida su
+paso y enciende los rojos; (5) el **Guardar** revalida todo, enciende los rojos
+y **navega al primer paso incompleto**; (6) **Cancelar** (y el Atrás del paso 1,
+que sale a la galería) piden **confirmación** para no perder un tablero a medio
+llenar (`grpConfirmarCancelar`); (7) `ModernNumberInput` (Min/Max) impide teclear
+cantidades/dimensiones fuera de rango. Así no se puede **guardar** un tablero
+incompleto ni **perder** uno sin querer.
 
 ## ⚠️ Léelo antes de pegar
 
@@ -49,9 +69,16 @@ las mantengo tal cual en este documento en vez de mis versiones genéricas
 real. Si al pegar alguna pantalla nueva Studio pide una versión distinta,
 usa la que él te ofrezca — es información más confiable que la de este doc.
 
-- **`GroupContainer`** solo se usa ahora para el popup de confirmar
-  eliminación (`grpConfirmarEliminar`) — ya no hace falta para separar
-  galería/formulario, porque cada uno vive en su propia pantalla.
+- **`GroupContainer`** (`Variant: "ManualLayout"`) se usa para el popup de
+  confirmar eliminación (`grpConfirmarEliminar`, en `scrTableros`) y para el de
+  confirmar descartar el tablero (`grpConfirmarCancelar`, uno por cada una de
+  las 4 pantallas del tablero).
+- **`navSubPasos`** es otro `ModernTabList@1.0.0` (una copia por pantalla del
+  tablero; solo cambia el `Default`). Si Studio pide otra versión al pegarlo,
+  usa la que ofrezca.
+- **`App.Formulas`** (fórmulas con nombre) debe pegarse aparte de `OnStart`
+  (sección **App — Formulas**). Si tu entorno no las tiene habilitadas, pega
+  cada expresión inline donde se usa (banner, Guardar).
 - El resto de identificadores (`Modern*`, cada propiedad) está verificado
   contra la página oficial de ese control — ver Fuentes en
   [05-canvas-yaml-captura.md](05-canvas-yaml-captura.md#fuentes).
@@ -65,6 +92,7 @@ App:
   Properties:
     OnStart: |
       Set(varEditIndex; Blank());;
+      Set(varValidarTablero; false);;
       ClearCollect(colTableros; []);;
       ClearCollect(colOpcIngenieriaPor; Table(
         {Value:"csenergy"; Label:"CSEnergy la provee"};
@@ -204,6 +232,47 @@ App:
 > desde el árbol (selecciona **App** arriba de todo → barra de fórmulas →
 > `OnStart` → pega solo el contenido, sin la línea `App:`/`Properties:`/
 > `OnStart: |`).
+
+---
+
+## App — Formulas (fórmulas con nombre)  ← capa a prueba de tontos
+
+Selecciona **App** en el árbol → propiedad **Formulas** → pega esto. Son la
+única fuente de verdad de "¿está completa cada etapa?" y las reusan el banner
+de pendientes, el botón Guardar y el salto al primer paso incompleto. (Si tu
+entorno no tiene *Named formulas*, pega cada expresión inline donde se usa.)
+
+```powerfx
+pasoIdentificacionOK =
+    And(
+        Not(IsBlank(txtNombreTablero.Text));
+        Not(IsBlank(ddTipoEntrega.Selected.Value));
+        Not(IsBlank(ddInstalacionNuevaReemplazo.Selected.Value));
+        Or(ddTipoEntrega.Selected.Value <> "tablero"; Not(IsBlank(ddTipoTablero.Selected.Value)))
+    );
+pasoUbicacionOK =
+    And(
+        Not(IsBlank(ddUbicacion.Selected.Value));
+        Not(IsBlank(ddGradoIP.Selected.Value));
+        Not(IsBlank(ddTipoMontaje.Selected.Value))
+    );
+pasoElectricoOK =
+    And(
+        Not(IsBlank(ddTension.Selected.Value));
+        Not(IsBlank(ddSistema.Selected.Value));
+        numPotencia.Value > 0;
+        Not(IsBlank(ddFrecuencia.Selected.Value));
+        CountRows(cmbProteccionesRequeridas.SelectedItems) > 0
+    );
+pasoConstructivoOK =
+    And(
+        Not(IsBlank(ddMaterialGabinete.Selected.Value));
+        Not(IsBlank(ddTipoVentilacion.Selected.Value));
+        Not(IsBlank(ddExpansionFutura.Selected.Value))
+    );
+tableroCompleto =
+    And(pasoIdentificacionOK; pasoUbicacionOK; pasoElectricoOK; pasoConstructivoOK)
+```
 
 ---
 
@@ -411,6 +480,7 @@ Screens:
             Height: =32
             OnSelect: |
               Set(varEditIndex; galTableros.Selected);;
+              Set(varValidarTablero; false);;
               Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
               Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
               Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(numNumeroCircuitos);;
@@ -471,6 +541,7 @@ Screens:
             Width: =300
             OnSelect: |
               Set(varEditIndex; Blank());;
+              Set(varValidarTablero; false);;
               Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
               Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
               Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(numNumeroCircuitos);;
@@ -554,13 +625,29 @@ Screens:
 
   scrTableroForm:
     Children:
+      - navSubPasos:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
+            Default: ="1. Identificación"
+            Appearance: =TabListAppearance.Underline
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            OnChange: |
+              Switch(Self.Selected.Value;
+                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
+                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
+                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
+                Navigate(scrTableroForm3; ScreenTransition.None)
+              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 1 de 4: Identificación"
             X: =40
-            Y: =32
+            Y: =56
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -653,15 +740,79 @@ Screens:
             X: =40
             Y: =420
             Width: =200
+      - lblPendientes:
+          Control: ModernText@1.0.0
+          Properties:
+            Text: |
+              If(tableroCompleto; "✓ Tablero completo — puedes guardar en el paso 4"; "⚠ Aún faltan obligatorios en: " & Concat(Filter(Table({p:"1. Identif."; ok:pasoIdentificacionOK}; {p:"2. Ubicación"; ok:pasoUbicacionOK}; {p:"3. Eléctrico"; ok:pasoElectricoOK}; {p:"4. Constructivo"; ok:pasoConstructivoOK}); Not(ok)); p; ",  "))
+            X: =40
+            Y: =Parent.Height - 150
+            Width: =Parent.Width - 80
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+            Color: =If(tableroCompleto; RGBA(22;163;74;1); RGBA(217;119;6;1))
+      - lblErroresPaso:
+          Control: ModernText@1.0.0
+          Properties:
+            Visible: =And(varValidarTablero; Not(pasoIdentificacionOK))
+            Text: |
+              "Corrige en este paso: " & Concat(Filter(Table({n:"Nombre del tablero"; ok:Not(IsBlank(txtNombreTablero.Text))}; {n:"Tipo de entrega"; ok:Not(IsBlank(ddTipoEntrega.Selected.Value))}; {n:"Instalación nueva/reemplazo"; ok:Not(IsBlank(ddInstalacionNuevaReemplazo.Selected.Value))}; {n:"Tipo de tablero"; ok:Or(ddTipoEntrega.Selected.Value<>"tablero"; Not(IsBlank(ddTipoTablero.Selected.Value)))}); Not(ok)); n; ", ")
+            X: =40
+            Y: =Parent.Height - 124
+            Width: =Parent.Width - 80
+            Size: =11
+            Color: =RGBA(239; 68; 68; 1)
+      - grpConfirmarCancelar:
+          Control: GroupContainer
+          Variant: "ManualLayout"
+          Properties:
+            Visible: =mostrarConfirmarCancelar
+            X: =Parent.Width * 0.5 - 180
+            Y: =Parent.Height * 0.5 - 70
+            Width: =360
+            Height: =140
+            Fill: =RGBA(255;255;255;1)
+            BorderColor: =RGBA(0;0;0;0.2)
+          Children:
+            - lblConfirmarCancelar:
+                Control: ModernText@1.0.0
+                Properties:
+                  Text: ="¿Descartar este tablero? Se perderán los datos no guardados."
+                  X: =16
+                  Y: =16
+                  Width: =328
+            - btnCancelarSi:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Text: ="Sí, descartar"
+                  Appearance: =ButtonAppearance.Primary
+                  X: =16
+                  Y: =84
+                  Width: =160
+                  OnSelect: |
+                    UpdateContext({mostrarConfirmarCancelar: false});;
+                    Set(varEditIndex; Blank());;
+                    Set(varValidarTablero; false);;
+                    Navigate(scrTableros; ScreenTransition.UnCover)
+            - btnCancelarNo:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Text: ="No, seguir"
+                  Appearance: =ButtonAppearance.Outline
+                  X: =184
+                  Y: =84
+                  Width: =160
+                  OnSelect: =UpdateContext({mostrarConfirmarCancelar: false})
       - btnAtras1:
           Control: ModernButton@1.0.0
           Properties:
-            Text: ="Atrás"
-            Appearance: =ButtonAppearance.Outline
+            Text: ="Cancelar"
+            Appearance: =ButtonAppearance.Subtle
             X: =40
             Y: =Parent.Height - 76
             Width: =160
-            OnSelect: =Navigate(scrTableros; ScreenTransition.UnCover)
+            # Salir del sub-flujo = perder el tablero a medio llenar: confirma antes.
+            OnSelect: =UpdateContext({mostrarConfirmarCancelar: true})
       - btnSiguiente1:
           Control: ModernButton@1.0.0
           Properties:
@@ -671,25 +822,36 @@ Screens:
             Width: =200
             OnSelect: |
               If(
-                Or(
-                  IsBlank(txtNombreTablero.Text);
-                  IsBlank(ddTipoEntrega.Selected.Value);
-                  IsBlank(ddInstalacionNuevaReemplazo.Selected.Value);
-                  And(ddTipoEntrega.Selected.Value = "tablero"; IsBlank(ddTipoTablero.Selected.Value))
-                );
-                Notify("Completa los campos obligatorios de este paso."; NotificationType.Error);
+                Not(pasoIdentificacionOK);
+                Set(varValidarTablero; true);; Notify("Completa los obligatorios marcados en rojo."; NotificationType.Error);
                 Navigate(scrTableroForm2a; ScreenTransition.Cover)
               )
 
   scrTableroForm2a:
     Children:
+      - navSubPasos:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
+            Default: ="2. Ubicación y montaje"
+            Appearance: =TabListAppearance.Underline
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            OnChange: |
+              Switch(Self.Selected.Value;
+                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
+                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
+                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
+                Navigate(scrTableroForm3; ScreenTransition.None)
+              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 2 de 4: Ubicación, ambiente y montaje"
             X: =40
-            Y: =32
+            Y: =56
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -810,6 +972,78 @@ Screens:
             Y: =308
             Width: =820
             Height: =72
+      - lblPendientes:
+          Control: ModernText@1.0.0
+          Properties:
+            Text: |
+              If(tableroCompleto; "✓ Tablero completo — puedes guardar en el paso 4"; "⚠ Aún faltan obligatorios en: " & Concat(Filter(Table({p:"1. Identif."; ok:pasoIdentificacionOK}; {p:"2. Ubicación"; ok:pasoUbicacionOK}; {p:"3. Eléctrico"; ok:pasoElectricoOK}; {p:"4. Constructivo"; ok:pasoConstructivoOK}); Not(ok)); p; ",  "))
+            X: =40
+            Y: =Parent.Height - 150
+            Width: =Parent.Width - 80
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+            Color: =If(tableroCompleto; RGBA(22;163;74;1); RGBA(217;119;6;1))
+      - lblErroresPaso:
+          Control: ModernText@1.0.0
+          Properties:
+            Visible: =And(varValidarTablero; Not(pasoUbicacionOK))
+            Text: |
+              "Corrige en este paso: " & Concat(Filter(Table({n:"Ubicación"; ok:Not(IsBlank(ddUbicacion.Selected.Value))}; {n:"Grado IP"; ok:Not(IsBlank(ddGradoIP.Selected.Value))}; {n:"Tipo de montaje"; ok:Not(IsBlank(ddTipoMontaje.Selected.Value))}); Not(ok)); n; ", ")
+            X: =40
+            Y: =Parent.Height - 124
+            Width: =Parent.Width - 80
+            Size: =11
+            Color: =RGBA(239; 68; 68; 1)
+      - btnCancelar:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Cancelar"
+            Appearance: =ButtonAppearance.Subtle
+            X: =220
+            Y: =Parent.Height - 76
+            Width: =160
+            OnSelect: =UpdateContext({mostrarConfirmarCancelar: true})
+      - grpConfirmarCancelar:
+          Control: GroupContainer
+          Variant: "ManualLayout"
+          Properties:
+            Visible: =mostrarConfirmarCancelar
+            X: =Parent.Width * 0.5 - 180
+            Y: =Parent.Height * 0.5 - 70
+            Width: =360
+            Height: =140
+            Fill: =RGBA(255;255;255;1)
+            BorderColor: =RGBA(0;0;0;0.2)
+          Children:
+            - lblConfirmarCancelar:
+                Control: ModernText@1.0.0
+                Properties:
+                  Text: ="¿Descartar este tablero? Se perderán los datos no guardados."
+                  X: =16
+                  Y: =16
+                  Width: =328
+            - btnCancelarSi:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Text: ="Sí, descartar"
+                  Appearance: =ButtonAppearance.Primary
+                  X: =16
+                  Y: =84
+                  Width: =160
+                  OnSelect: |
+                    UpdateContext({mostrarConfirmarCancelar: false});;
+                    Set(varEditIndex; Blank());;
+                    Set(varValidarTablero; false);;
+                    Navigate(scrTableros; ScreenTransition.UnCover)
+            - btnCancelarNo:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Text: ="No, seguir"
+                  Appearance: =ButtonAppearance.Outline
+                  X: =184
+                  Y: =84
+                  Width: =160
+                  OnSelect: =UpdateContext({mostrarConfirmarCancelar: false})
       - btnAtras2a:
           Control: ModernButton@1.0.0
           Properties:
@@ -828,24 +1062,36 @@ Screens:
             Width: =200
             OnSelect: |
               If(
-                Or(
-                  IsBlank(ddUbicacion.Selected.Value);
-                  IsBlank(ddGradoIP.Selected.Value);
-                  IsBlank(ddTipoMontaje.Selected.Value)
-                );
-                Notify("Completa los campos obligatorios de este paso."; NotificationType.Error);
+                Not(pasoUbicacionOK);
+                Set(varValidarTablero; true);; Notify("Completa los obligatorios marcados en rojo."; NotificationType.Error);
                 Navigate(scrTableroForm2b; ScreenTransition.Cover)
               )
 
   scrTableroForm2b:
     Children:
+      - navSubPasos:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
+            Default: ="3. Eléctrico"
+            Appearance: =TabListAppearance.Underline
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            OnChange: |
+              Switch(Self.Selected.Value;
+                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
+                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
+                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
+                Navigate(scrTableroForm3; ScreenTransition.None)
+              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 3 de 4: Parámetros eléctricos"
             X: =40
-            Y: =32
+            Y: =56
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -971,6 +1217,78 @@ Screens:
             X: =460
             Y: =252
             Width: =400
+      - lblPendientes:
+          Control: ModernText@1.0.0
+          Properties:
+            Text: |
+              If(tableroCompleto; "✓ Tablero completo — puedes guardar en el paso 4"; "⚠ Aún faltan obligatorios en: " & Concat(Filter(Table({p:"1. Identif."; ok:pasoIdentificacionOK}; {p:"2. Ubicación"; ok:pasoUbicacionOK}; {p:"3. Eléctrico"; ok:pasoElectricoOK}; {p:"4. Constructivo"; ok:pasoConstructivoOK}); Not(ok)); p; ",  "))
+            X: =40
+            Y: =Parent.Height - 150
+            Width: =Parent.Width - 80
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+            Color: =If(tableroCompleto; RGBA(22;163;74;1); RGBA(217;119;6;1))
+      - lblErroresPaso:
+          Control: ModernText@1.0.0
+          Properties:
+            Visible: =And(varValidarTablero; Not(pasoElectricoOK))
+            Text: |
+              "Corrige en este paso: " & Concat(Filter(Table({n:"Tensión"; ok:Not(IsBlank(ddTension.Selected.Value))}; {n:"Sistema"; ok:Not(IsBlank(ddSistema.Selected.Value))}; {n:"Potencia (>0)"; ok:numPotencia.Value>0}; {n:"Frecuencia"; ok:Not(IsBlank(ddFrecuencia.Selected.Value))}; {n:"Protecciones (≥1)"; ok:CountRows(cmbProteccionesRequeridas.SelectedItems)>0}); Not(ok)); n; ", ")
+            X: =40
+            Y: =Parent.Height - 124
+            Width: =Parent.Width - 80
+            Size: =11
+            Color: =RGBA(239; 68; 68; 1)
+      - btnCancelar:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Cancelar"
+            Appearance: =ButtonAppearance.Subtle
+            X: =220
+            Y: =Parent.Height - 76
+            Width: =160
+            OnSelect: =UpdateContext({mostrarConfirmarCancelar: true})
+      - grpConfirmarCancelar:
+          Control: GroupContainer
+          Variant: "ManualLayout"
+          Properties:
+            Visible: =mostrarConfirmarCancelar
+            X: =Parent.Width * 0.5 - 180
+            Y: =Parent.Height * 0.5 - 70
+            Width: =360
+            Height: =140
+            Fill: =RGBA(255;255;255;1)
+            BorderColor: =RGBA(0;0;0;0.2)
+          Children:
+            - lblConfirmarCancelar:
+                Control: ModernText@1.0.0
+                Properties:
+                  Text: ="¿Descartar este tablero? Se perderán los datos no guardados."
+                  X: =16
+                  Y: =16
+                  Width: =328
+            - btnCancelarSi:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Text: ="Sí, descartar"
+                  Appearance: =ButtonAppearance.Primary
+                  X: =16
+                  Y: =84
+                  Width: =160
+                  OnSelect: |
+                    UpdateContext({mostrarConfirmarCancelar: false});;
+                    Set(varEditIndex; Blank());;
+                    Set(varValidarTablero; false);;
+                    Navigate(scrTableros; ScreenTransition.UnCover)
+            - btnCancelarNo:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Text: ="No, seguir"
+                  Appearance: =ButtonAppearance.Outline
+                  X: =184
+                  Y: =84
+                  Width: =160
+                  OnSelect: =UpdateContext({mostrarConfirmarCancelar: false})
       - btnAtras2b:
           Control: ModernButton@1.0.0
           Properties:
@@ -989,26 +1307,36 @@ Screens:
             Width: =200
             OnSelect: |
               If(
-                Or(
-                  IsBlank(ddTension.Selected.Value);
-                  IsBlank(ddSistema.Selected.Value);
-                  IsBlank(numPotencia.Value) || numPotencia.Value <= 0;
-                  IsBlank(ddFrecuencia.Selected.Value);
-                  CountRows(cmbProteccionesRequeridas.SelectedItems) = 0
-                );
-                Notify("Completa los campos obligatorios de este paso."; NotificationType.Error);
+                Not(pasoElectricoOK);
+                Set(varValidarTablero; true);; Notify("Completa los obligatorios marcados en rojo."; NotificationType.Error);
                 Navigate(scrTableroForm3; ScreenTransition.Cover)
               )
 
   scrTableroForm3:
     Children:
+      - navSubPasos:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
+            Default: ="4. Constructivo"
+            Appearance: =TabListAppearance.Underline
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            OnChange: |
+              Switch(Self.Selected.Value;
+                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
+                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
+                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
+                Navigate(scrTableroForm3; ScreenTransition.None)
+              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 4 de 4: Diseño constructivo"
             X: =40
-            Y: =32
+            Y: =56
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -1062,6 +1390,78 @@ Screens:
             Y: =196
             Width: =820
             Height: =72
+      - lblPendientes:
+          Control: ModernText@1.0.0
+          Properties:
+            Text: |
+              If(tableroCompleto; "✓ Tablero completo — puedes guardar en el paso 4"; "⚠ Aún faltan obligatorios en: " & Concat(Filter(Table({p:"1. Identif."; ok:pasoIdentificacionOK}; {p:"2. Ubicación"; ok:pasoUbicacionOK}; {p:"3. Eléctrico"; ok:pasoElectricoOK}; {p:"4. Constructivo"; ok:pasoConstructivoOK}); Not(ok)); p; ",  "))
+            X: =40
+            Y: =Parent.Height - 150
+            Width: =Parent.Width - 80
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+            Color: =If(tableroCompleto; RGBA(22;163;74;1); RGBA(217;119;6;1))
+      - lblErroresPaso:
+          Control: ModernText@1.0.0
+          Properties:
+            Visible: =And(varValidarTablero; Not(pasoConstructivoOK))
+            Text: |
+              "Corrige en este paso: " & Concat(Filter(Table({n:"Material del gabinete"; ok:Not(IsBlank(ddMaterialGabinete.Selected.Value))}; {n:"Ventilación"; ok:Not(IsBlank(ddTipoVentilacion.Selected.Value))}; {n:"Expansión futura"; ok:Not(IsBlank(ddExpansionFutura.Selected.Value))}); Not(ok)); n; ", ")
+            X: =40
+            Y: =Parent.Height - 124
+            Width: =Parent.Width - 80
+            Size: =11
+            Color: =RGBA(239; 68; 68; 1)
+      - btnCancelar:
+          Control: ModernButton@1.0.0
+          Properties:
+            Text: ="Cancelar"
+            Appearance: =ButtonAppearance.Subtle
+            X: =220
+            Y: =Parent.Height - 76
+            Width: =160
+            OnSelect: =UpdateContext({mostrarConfirmarCancelar: true})
+      - grpConfirmarCancelar:
+          Control: GroupContainer
+          Variant: "ManualLayout"
+          Properties:
+            Visible: =mostrarConfirmarCancelar
+            X: =Parent.Width * 0.5 - 180
+            Y: =Parent.Height * 0.5 - 70
+            Width: =360
+            Height: =140
+            Fill: =RGBA(255;255;255;1)
+            BorderColor: =RGBA(0;0;0;0.2)
+          Children:
+            - lblConfirmarCancelar:
+                Control: ModernText@1.0.0
+                Properties:
+                  Text: ="¿Descartar este tablero? Se perderán los datos no guardados."
+                  X: =16
+                  Y: =16
+                  Width: =328
+            - btnCancelarSi:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Text: ="Sí, descartar"
+                  Appearance: =ButtonAppearance.Primary
+                  X: =16
+                  Y: =84
+                  Width: =160
+                  OnSelect: |
+                    UpdateContext({mostrarConfirmarCancelar: false});;
+                    Set(varEditIndex; Blank());;
+                    Set(varValidarTablero; false);;
+                    Navigate(scrTableros; ScreenTransition.UnCover)
+            - btnCancelarNo:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Text: ="No, seguir"
+                  Appearance: =ButtonAppearance.Outline
+                  X: =184
+                  Y: =84
+                  Width: =160
+                  OnSelect: =UpdateContext({mostrarConfirmarCancelar: false})
       - btnAtras3:
           Control: ModernButton@1.0.0
           Properties:
@@ -1080,12 +1480,15 @@ Screens:
             Width: =200
             OnSelect: |
               If(
-                Or(
-                  IsBlank(ddMaterialGabinete.Selected.Value);
-                  IsBlank(ddTipoVentilacion.Selected.Value);
-                  IsBlank(ddExpansionFutura.Selected.Value)
+                Not(tableroCompleto);
+                Set(varValidarTablero; true);;
+                Notify("Faltan obligatorios. Te llevo al primer paso incompleto (en rojo)."; NotificationType.Error);;
+                If(
+                  Not(pasoIdentificacionOK); Navigate(scrTableroForm; ScreenTransition.None);
+                  Not(pasoUbicacionOK);      Navigate(scrTableroForm2a; ScreenTransition.None);
+                  Not(pasoElectricoOK);      Navigate(scrTableroForm2b; ScreenTransition.None);
+                  Navigate(scrTableroForm3; ScreenTransition.None)
                 );
-                Notify("Completa los campos obligatorios de este paso."; NotificationType.Error);
                 With(
                   {
                     registro: {
@@ -1135,6 +1538,7 @@ Screens:
                   )
                 );;
                 Set(varEditIndex; Blank());;
+                Set(varValidarTablero; false);;
                 Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
                 Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
                 Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(numNumeroCircuitos);;
