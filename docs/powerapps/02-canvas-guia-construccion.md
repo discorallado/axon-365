@@ -21,6 +21,7 @@ Este documento es la referencia completa de la **Pantalla 2 — Tableros**
 (`scrTableroForm`), construida como **maestro-detalle en una sola pantalla**:
 galería de tableros a la izquierda + formulario completo a la derecha.
 
+
 > **Dónde está el resto:** la app completa (las 4 pantallas, la barra de
 > pestañas compartida, y las Pantallas 1 y 3) se arma siguiendo
 > [dataverse/05-construir-canvas-captura.md](../dataverse/05-construir-canvas-captura.md) —
