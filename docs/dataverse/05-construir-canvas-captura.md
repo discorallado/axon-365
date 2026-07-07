@@ -9,7 +9,7 @@ clicando en el navegador). Usa **controles Modern** (Fluent) — en el panel
 clásicos). Mapeo completo clásico → Modern en
 [docs/powerapps/05-canvas-yaml-captura.md](../powerapps/05-canvas-yaml-captura.md#controles-modern-usados--mapeo-y-diferencias-clave).
 
-## Arquitectura final (4 pantallas, navegación por pestañas)
+## Arquitectura final (8 pantallas: 3 con pestañas + 4 pasos del tablero + confirmación)
 
 ```
 ┌──────────────────────────────────────────────────────┐
@@ -19,21 +19,37 @@ clásicos). Mapeo completo clásico → Modern en
 └──────────────────────────────────────────────────────┘
 ```
 
-- **`scrContactoProyecto`** — Pantalla 1. Datos de contacto y del proyecto.
-- **`scrTableroForm`** — Pantalla 2. **Maestro-detalle en una sola pantalla**:
-  galería de tableros a la izquierda, formulario completo (~37 campos) a la
-  derecha. Diseño y fórmulas completas en
-  [docs/powerapps/02-canvas-guia-construccion.md](../powerapps/02-canvas-guia-construccion.md) —
-  este documento solo agrega lo que falta para encajarla en la barra de
-  pestañas (Bloque 16).
-- **`scrDocumentacion`** — Pantalla 3. Adjuntos, observaciones y el botón
-  **Enviar solicitud**.
+- **`scrContactoProyecto`** — Datos de contacto y del proyecto. Pestaña.
+- **`scrTableros`** — Galería de tableros agregados (ancho completo), con
+  Agregar/Editar/Eliminar. Pestaña.
+- **`scrTableroForm` / `scrTableroForm2a` / `scrTableroForm2b` / `scrTableroForm3`**
+  — las ~37 columnas del tablero repartidas en **4 pantallas** (una por grupo
+  de campos: Identificación / Ubicación-ambiente-montaje / Eléctrico / Diseño
+  constructivo), con botones Atrás/Siguiente — **no** llevan la barra de
+  pestañas, son un sub-flujo lineal que se entra y sale desde `scrTableros`
+  (Agregar o Editar → paso 1; Guardar tablero en el paso 4 → vuelve a
+  `scrTableros`). Se decidió así (en vez de un solo panel con todo junto)
+  porque 35 campos en un panel resultaban muy densos para trabajar en el
+  editor. YAML completo de las 4 en
+  [docs/powerapps/06-yaml-completo-para-pegar.md](../powerapps/06-yaml-completo-para-pegar.md).
+- **`scrDocumentacion`** — Adjuntos, observaciones y el botón **Enviar
+  solicitud**. Pestaña.
 - **`scrConfirmacion`** — **no es una pestaña**: aparece después de enviar,
   fuera del flujo de pestañas (no tiene forma de volver a ella navegando).
 
-Las **3 primeras pantallas comparten la misma barra de pestañas** (Bloque 14b)
-para poder saltar directo a cualquiera. Además, cada pantalla tiene su propio
-botón **Siguiente** que valida y avanza a la próxima en orden.
+Las **3 pantallas con pestaña** (`scrContactoProyecto`, `scrTableros`,
+`scrDocumentacion`) comparten la misma barra (Bloque 14b) para poder saltar
+directo a cualquiera. Cada una de las 4 pantallas del tablero valida **solo
+sus propios campos** antes de dejar avanzar al siguiente paso.
+
+> **Guía de referencia de esta arquitectura de 8 pantallas:**
+> [docs/powerapps/06-yaml-completo-para-pegar.md](../powerapps/06-yaml-completo-para-pegar.md)
+> tiene el YAML completo y ya actualizado de las 8 pantallas (control por
+> control, fórmulas incluidas). Los Bloques de este documento (14-19)
+> describían la versión anterior de "maestro-detalle en una sola pantalla"
+> (`docs/powerapps/02-canvas-guia-construccion.md`) — esa versión quedó
+> **superseded**; se conserva el documento como referencia histórica pero la
+> construcción real sigue el diseño de 4 pantallas descrito aquí.
 
 > Las fórmulas exactas de cada control (qué escribir en cada propiedad) de
 > Contacto/Proyecto y del envío a Dataverse están en
@@ -56,7 +72,11 @@ botón **Siguiente** que valida y avanza a la próxima en orden.
    sobre el nombre) **exactamente** así — los `Navigate(...)` dependen de
    estos nombres:
    - `scrContactoProyecto`
+   - `scrTableros`
    - `scrTableroForm`
+   - `scrTableroForm2a`
+   - `scrTableroForm2b`
+   - `scrTableroForm3`
    - `scrDocumentacion`
    - `scrConfirmacion`
 5. Selecciona **App** en el árbol (arriba de todo) → en la barra de fórmulas,
@@ -71,7 +91,7 @@ botón **Siguiente** que valida y avanza a la próxima en orden.
    // ...resto de colOpc* — ver 05-canvas-yaml-captura.md completo...
    ```
 
-✅ *Verificable:* 4 pantallas creadas con esos nombres exactos; el conector
+✅ *Verificable:* 8 pantallas creadas con esos nombres exactos; el conector
 Dataverse aparece en el panel de Datos.
 
 ---
@@ -81,9 +101,10 @@ Dataverse aparece en el panel de Datos.
 Power Apps trae un control Modern dedicado exactamente para esto —
 **`ModernTabList@1.0.0`** ("Tabs o tab list" en el panel Insertar → Modern) —
 en vez de armar la barra a mano con botones. Se inserta **una copia por
-pantalla** (`scrContactoProyecto`, `scrTableroForm`, `scrDocumentacion`); la
-única diferencia entre copias es el `Default` (qué pestaña aparece marcada al
-entrar a esa pantalla).
+pantalla, solo en las 3 pantallas con pestaña** (`scrContactoProyecto`,
+`scrTableros`, `scrDocumentacion` — **no** en las 4 pantallas del tablero, que
+son un sub-flujo aparte); la única diferencia entre copias es el `Default`
+(qué pestaña aparece marcada al entrar a esa pantalla).
 
 1. En cada una de las 3 pantallas → **Insertar → Modern → Tabs o tab list** →
    nómbralo `navPestanas`.
@@ -94,7 +115,7 @@ entrar a esa pantalla).
 3. **`Default`** — **distinto en cada pantalla**, la pestaña que corresponde a
    esa pantalla:
    - En `scrContactoProyecto`: `"Contacto y Proyecto"`
-   - En `scrTableroForm`: `"Tableros"`
+   - En `scrTableros`: `"Tableros"`
    - En `scrDocumentacion`: `"Documentación"`
 4. **`OnChange`** (igual en las 3 copias) — navega según la pestaña elegida.
    `OnChange` solo dispara cuando el usuario cambia de pestaña (no si toca la
@@ -102,7 +123,7 @@ entrar a esa pantalla).
    ```
    Switch(Self.Selected.Value;
      "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-     "Tableros";            Navigate(scrTableroForm; ScreenTransition.None);
+     "Tableros";            Navigate(scrTableros; ScreenTransition.None);
      Navigate(scrDocumentacion; ScreenTransition.None)
    )
    ```
@@ -118,11 +139,11 @@ entrar a esa pantalla).
 > (`If(CountRows(colTableros) = 0; Notify(...); Navigate(scrDocumentacion; ...))`)
 > en las 3 copias.
 
-✅ *Verificable:* las 3 pantallas muestran la misma barra arriba; la pestaña
-de la pantalla en la que estás parado aparece marcada como activa (por el
-`Default` de esa copia); tocar otra pestaña navega ahí sin perder los datos
-ya escritos (los controles retienen su valor al navegar entre pantallas
-dentro de la misma sesión de la app).
+✅ *Verificable:* las 3 pantallas con pestaña muestran la misma barra arriba;
+la pestaña de la pantalla en la que estás parado aparece marcada como activa
+(por el `Default` de esa copia); tocar otra pestaña navega ahí sin perder los
+datos ya escritos (los controles retienen su valor al navegar entre
+pantallas dentro de la misma sesión de la app).
 
 ---
 
@@ -138,55 +159,39 @@ en cada propiedad listada pega el contenido de la fórmula (sin el `=`).
 Controles: `lblTituloContacto`, `txtContactoNombre`, `txtContactoEmail`,
 `lblEmailError`, `txtContactoTelefono`, `txtNombreProyecto`,
 `txtEmpresaCliente`, `txtUbicacion`, `txtCentroCosto`, `dtpEntrega`,
-`ddIngenieriaPor`, `btnSiguiente` — su `OnSelect` del YAML ya termina en
-`Navigate(scrTableros; ScreenTransition.Cover)`; **cámbialo** a
-`Navigate(scrTableroForm; ScreenTransition.Cover)` para que apunte al nombre
-de pantalla real de este documento.
+`ddIngenieriaPor`, `btnSiguiente` — el `OnSelect` de `btnSiguiente` navega a
+`Navigate(scrTableros; ScreenTransition.Cover)` (la galería, no un paso del
+formulario del tablero).
 
 Agrega también la **barra de pestañas** del Bloque 14b arriba de todo.
 
 ✅ *Verificable:* al tocar **Siguiente** con campos obligatorios vacíos, aparece
-el `Notify` de error; con todo completo, navega a `scrTableroForm`.
+el `Notify` de error; con todo completo, navega a `scrTableros`.
 
 ---
 
-## Bloque 16 — Pantalla 2: Tableros (`scrTableroForm`, maestro-detalle)
+## Bloque 16 — Pantalla "Tableros" (`scrTableros`, galería) + las 4 pantallas del formulario
 
-Esta pantalla **no se construye desde este documento** — el diseño completo
-(galería izquierda + formulario derecho con los ~37 campos, `Default`/`Reset`
-de cada control, validación, guardar/nuevo/eliminar) está en
-[docs/powerapps/02-canvas-guia-construccion.md](../powerapps/02-canvas-guia-construccion.md)
-§3. Constrúyela siguiendo ese documento completo, y agrega solo estas dos
-cosas que le faltan para encajar en el flujo de pestañas:
+`scrTableros` es la galería de tableros agregados, a **ancho completo** (ya
+no comparte pantalla con el formulario). **Agregar** y **Editar** navegan al
+sub-flujo de 4 pantallas (`scrTableroForm` → `2a` → `2b` → `3`), que se sale
+por "Guardar tablero" en el paso 4, volviendo a `scrTableros`.
 
-1. **Barra de pestañas** del Bloque 14b, arriba de todo.
-2. **Botón `btnSiguienteTableros`** (junto a "Agregar Tablero"), que valida
-   que exista al menos un tablero antes de pasar a Documentación:
-   ```
-   If(
-       CountRows(colTableros) = 0;
-       Notify("Agrega al menos un tablero antes de continuar."; NotificationType.Error);
-       Navigate(scrDocumentacion; ScreenTransition.Cover)
-   )
-   ```
+Construcción completa (galería, botones, las 4 pantallas del formulario con
+`Default`/`Reset` de cada campo, validación repartida por paso, popup de
+confirmar eliminar) en
+[docs/powerapps/06-yaml-completo-para-pegar.md](../powerapps/06-yaml-completo-para-pegar.md) —
+ese documento ya trae la arquitectura de 8 pantallas completa, control por
+control. Agrega la **barra de pestañas** del Bloque 14b arriba de todo en
+`scrTableros` únicamente (las 4 pantallas del formulario no la llevan).
 
-> En el diseño de 02, los botones **Editar** y **Eliminar** van **arriba de
-> la galería** (no uno por fila) y actúan sobre `galTableros.Selected` — ver
-> §3.1 y §3.7 de ese documento para las fórmulas exactas, incluyendo el
-> `DisplayMode` que los deshabilita cuando no hay ninguna fila seleccionada.
-
-> **Variante en varias pantallas (sub-pestañas):** para separar el
-> sub-formulario del tablero en 4 pantallas reales (`scrTableros` galería +
-> `scrTableroPaso1..4`) navegadas por **sub-pestañas**, y volver a la galería
-> al Guardar, construye según
-> [docs/powerapps/06-subformulario-multipantalla.md](../powerapps/06-subformulario-multipantalla.md)
-> en lugar de la pantalla única de 02. Todo lo demás (barra de pestañas
-> principal, Pantallas 1/3/confirmación) no cambia.
-
-✅ *Verificable:* **Agregar Tablero** limpia el panel derecho (modo "nuevo");
-seleccionar una fila de la galería y tocar **Editar** carga sus valores;
-**Guardar tablero** lo agrega/actualiza en la galería; **Siguiente** con la
-galería vacía muestra el error y no navega.
+✅ *Verificable:* **Agregar Tablero** limpia los 4 pasos (modo "nuevo") y
+navega al paso 1; seleccionar una fila de la galería y tocar **Editar** carga
+sus valores y navega al paso 1; **Atrás/Siguiente** se mueve entre los 4
+pasos validando solo los campos de cada uno; **Guardar tablero** en el paso 4
+agrega/actualiza el tablero en la galería y vuelve a `scrTableros`;
+**Siguiente** en `scrTableros` con la galería vacía muestra el error y no
+navega.
 
 ---
 
