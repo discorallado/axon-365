@@ -43,9 +43,8 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 | `docs/instrucciones-proyecto.md` | Instrucciones persistentes para Cowork/Claude (decisiones firmes, método, qué no hacer) |
 | `docs/adr/` | Decisiones: `0001` SharePoint (superseded), `0002` pivote a Dataverse |
 | `docs/dataverse/` | **Vigente** — `00` guía mecánica de construcción (Solución/tablas/roles), `01` tablas, `02` BPF + security roles, `03` Plan Developer y despliegue, `04` Business Rules/vistas/formularios/app Model-driven, `05` construir el wizard Canvas (8 pantallas: 3 con pestañas + 4 pasos del tablero + confirmación) en el navegador |
-| `docs/sharepoint/` | ⚠️ Superseded — esquema de columnas/choices, útil solo como referencia del modelo |
-| `docs/powerapps/` | `02` ⚠️ superseded (maestro-detalle en un panel, referencia histórica de fórmulas), `04` gestión, `05` YAML/fórmulas de captura (Dataverse), `06` **YAML completo consolidado — diseño final de 8 pantallas, probado en Studio real, con sub-pestañas en el tablero + capa a prueba de tontos** |
-| `docs/powerautomate/` | Flujos: F-1 vigente; F-2 → reemplazado por Business Process Flow |
+| `docs/powerapps/` | `04` gestión, `05` YAML/fórmulas de captura (Dataverse), `06` **YAML completo consolidado — diseño final de 8 pantallas, probado en Studio real, con sub-pestañas en el tablero + capa a prueba de tontos**, `07` referencia rápida de colecciones (`colOpc*`) |
+| `docs/powerautomate/` | Flujo F-1 vigente (notificaciones + acuse); F-2 → reemplazado por el flujo real-time de estados de `dataverse/02` |
 
 ## Orden de construcción recomendado (Dataverse)
 
@@ -85,9 +84,10 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 - [x] Guía clic por clic del wizard de captura Canvas documentada — arquitectura
       final de 8 pantallas: 3 con pestañas + 4 pasos del tablero + confirmación
       (`dataverse/05`)
-- [x] ⚠️ Pantalla 2 (tableros) maestro-detalle en una sola pantalla —
-      **superseded**, resultó muy densa visualmente; queda como referencia
-      histórica de fórmulas (`Default`/`Reset`/validación/guardar) (`powerapps/02`)
+- [x] Formulario del tablero repartido en **4 pantallas** (Identificación /
+      Ubicación-ambiente-montaje / Eléctrico / Diseño constructivo) — reemplaza
+      el diseño maestro-detalle en un solo panel, que resultaba muy denso
+      (`dataverse/05` + `powerapps/06`)
 - [x] Migrado a controles **Modern** de Power Apps (verificado contra Microsoft
       Learn, y contra Studio real por el usuario): `ModernButton`,
       `ModernTextInput`, `ModernNumberInput`, `ModernDropdown`, `ModernCombobox`,

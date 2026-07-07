@@ -80,6 +80,7 @@ construir en make.powerapps.com siguiendo `docs/dataverse/00-construir-en-powera
 - `docs/dataverse/02` — máquina de estados (flujo real-time) + security roles.
 - `docs/dataverse/03` — Plan Developer y despliegue a producción vía Solución.
 - `docs/powerapps/05` — YAML `.pa.yaml` de la app Canvas de captura (Dataverse).
-- `docs/powerapps/02`, `04` y `docs/powerautomate/03` — referencias previas
-  (parcialmente superseded; ver banners).
-- `docs/sharepoint/01` — superseded; útil solo como referencia de campos.
+- `docs/powerapps/06` — YAML completo consolidado (App + 8 pantallas), probado en Studio real.
+- `docs/powerapps/07` — referencia rápida de las colecciones `colOpc*` para `App.OnStart`.
+- `docs/powerapps/04` — app de gestión interna.
+- `docs/powerautomate/03` — flujo F-1 (notificaciones + acuse), adaptado a Dataverse.
