@@ -266,9 +266,16 @@ sub-pestaña aparece marcada al entrar).
 5. (Opcional) `Appearance: =TabListAppearance.Underline`.
 
 > **Las sub-pestañas navegan libre, sin validar** — igual que la barra
-> principal. La validación real ocurre al **Guardar tablero** (Paso 4). El
+> principal (sirven para revisar/corregir cualquier etapa sin bloqueos). El
 > valor de los controles se conserva al saltar entre sub-pestañas, así que
 > puedes ir y volver sin perder lo escrito.
+>
+> **Validación en dos niveles:** cada botón **Siguiente ▶** valida los
+> obligatorios de **su** etapa antes de avanzar (avisa temprano, etapa por
+> etapa — ver §3, §4, §5); y el botón **Guardar tablero** (Paso 4) revalida
+> **todo** el tablero como red de seguridad final, porque las sub-pestañas
+> permiten saltarse los Siguiente. Los obligatorios del Paso 4 (material,
+> ventilación, expansión) se validan solo en el Guardar, que es su etapa.
 
 ---
 
@@ -416,7 +423,18 @@ que la pantalla sea copiar-pegar directo.
             X: =Parent.Width - 248
             Y: =Parent.Height - 88
             Width: =200
-            OnSelect: =Navigate(scrTableroPaso2; ScreenTransition.None)
+            # Valida los obligatorios de esta etapa antes de avanzar.
+            OnSelect: |
+              =If(
+                Or(
+                  IsBlank(txtNombreTablero.Text);
+                  IsBlank(ddTipoEntrega.Selected.Value);
+                  IsBlank(ddInstalacionNuevaReemplazo.Selected.Value);
+                  And(ddTipoEntrega.Selected.Value = "tablero"; IsBlank(ddTipoTablero.Selected.Value))
+                );
+                Notify("Completa los campos obligatorios de Identificación."; NotificationType.Error);
+                Navigate(scrTableroPaso2; ScreenTransition.None)
+              )
 ```
 
 ---
@@ -581,7 +599,17 @@ que la pantalla sea copiar-pegar directo.
             X: =Parent.Width - 248
             Y: =Parent.Height - 88
             Width: =200
-            OnSelect: =Navigate(scrTableroPaso3; ScreenTransition.None)
+            # Valida los obligatorios de esta etapa antes de avanzar.
+            OnSelect: |
+              =If(
+                Or(
+                  IsBlank(ddUbicacion.Selected.Value);
+                  IsBlank(ddGradoIP.Selected.Value);
+                  IsBlank(ddTipoMontaje.Selected.Value)
+                );
+                Notify("Completa los campos obligatorios de Ubicación y montaje."; NotificationType.Error);
+                Navigate(scrTableroPaso3; ScreenTransition.None)
+              )
 ```
 
 ---
@@ -755,7 +783,19 @@ que la pantalla sea copiar-pegar directo.
             X: =Parent.Width - 248
             Y: =Parent.Height - 88
             Width: =200
-            OnSelect: =Navigate(scrTableroPaso4; ScreenTransition.None)
+            # Valida los obligatorios de esta etapa antes de avanzar.
+            OnSelect: |
+              =If(
+                Or(
+                  IsBlank(ddTension.Selected.Value);
+                  IsBlank(ddSistema.Selected.Value);
+                  IsBlank(numPotencia.Value) || numPotencia.Value <= 0;
+                  IsBlank(ddFrecuencia.Selected.Value);
+                  CountRows(cmbProteccionesRequeridas.SelectedItems) = 0
+                );
+                Notify("Completa los campos obligatorios de Parámetros eléctricos."; NotificationType.Error);
+                Navigate(scrTableroPaso4; ScreenTransition.None)
+              )
 ```
 
 ---
@@ -962,7 +1002,9 @@ campos (repartidos en las 4 pantallas), arma el registro, lo agrega/actualiza en
    abre `scrTableroPaso1` con los campos vacíos y `lblModoEdicion` = "Nuevo
    tablero".
 2. Recorre las 4 sub-pestañas (o los botones Siguiente/Atrás); confirma que lo
-   escrito en el Paso 1 sigue ahí al volver desde el Paso 4.
+   escrito en el Paso 1 sigue ahí al volver desde el Paso 4. Toca **Siguiente ▶**
+   con un obligatorio de esa etapa vacío → aparece el `Notify` de esa etapa y
+   no avanza; con la etapa completa, avanza.
 3. En el Paso 4 → **Guardar tablero**: con campos obligatorios vacíos muestra el
    `Notify` (aunque falte algo del Paso 1, la validación lo detecta porque lee
    por nombre); con todo completo, agrega la fila y **vuelve a la galería**.
