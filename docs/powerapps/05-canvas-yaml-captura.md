@@ -127,6 +127,9 @@ App:
         ExpansionFutura:           "";
         ObservacionesTablero:      ""
       }); false));;
+      // varEditIndex tipado (queda Blank, pero con el esquema de la fila de colTableros)
+      // para que varEditIndex.Campo resuelva; IsBlank(varEditIndex) sigue siendo true.
+      Set(varEditIndex; First(colTableros));;
 
       ClearCollect(colOpcIngenieriaPor; Table(
         {Value:"csenergy"; Label:"CSEnergy la provee"};
