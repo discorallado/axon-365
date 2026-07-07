@@ -2,8 +2,7 @@
 
 Consolida en **un solo archivo** todo lo que ya está documentado por partes en
 [00-...](../dataverse/00-construir-en-powerapps.md) (tablas/roles, aparte —
-esto es solo la app Canvas), [05-canvas-yaml-captura.md](05-canvas-yaml-captura.md),
-[02-canvas-guia-construccion.md](02-canvas-guia-construccion.md) y
+esto es solo la app Canvas), [05-canvas-yaml-captura.md](05-canvas-yaml-captura.md) y
 [dataverse/05-construir-canvas-captura.md](../dataverse/05-construir-canvas-captura.md):
 la app entera (`App` + 8 `Screens`) en formato **`.pa.yaml`** (el esquema de
 código fuente actual de Power Apps, activo — no el formato retirado de

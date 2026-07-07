@@ -49,9 +49,8 @@ sus propios campos** antes de dejar avanzar al siguiente paso.
 > [docs/powerapps/06-yaml-completo-para-pegar.md](../powerapps/06-yaml-completo-para-pegar.md)
 > tiene el YAML completo y ya actualizado de las 8 pantallas (control por
 > control, fórmulas incluidas). Los Bloques de este documento (14-19)
-> describían la versión anterior de "maestro-detalle en una sola pantalla"
-> (`docs/powerapps/02-canvas-guia-construccion.md`) — esa versión quedó
-> **superseded**; se conserva el documento como referencia histórica pero la
+> describían la versión anterior de "maestro-detalle en una sola pantalla" —
+> esa versión quedó **superseded** (su documento se eliminó del repo); la
 > construcción real sigue el diseño de 4 pantallas descrito aquí.
 
 > Las fórmulas exactas de cada control (qué escribir en cada propiedad) de

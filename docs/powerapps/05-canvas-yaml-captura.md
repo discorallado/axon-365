@@ -77,7 +77,7 @@ Este YAML no se pega directo en cualquier vista del estudio. Cuatro vías:
 Además de la colección de tableros, se definen aquí las **colecciones de
 opciones** de cada `ModernDropdown`/`ModernCombobox` (código corto + etiqueta
 en español). Definirlas una sola vez evita repetir el mismo par código/etiqueta
-en `Items` y de nuevo en el `Default` de edición (ver 02-canvas-guia-construccion.md §3.4).
+en `Items` y de nuevo en el `Default` de edición.
 
 ```yaml
 App:
@@ -686,8 +686,10 @@ Screens:
 > **Adjuntar archivo**; (b) gestionarlos directamente desde la app Model-driven
 > ([docs/dataverse/04-app-model-driven.md](../dataverse/04-app-model-driven.md)
 > Bloque 11.2 §6), que sí edita el registro ya guardado. Los adjuntos **a nivel
-> solicitud** (specs generales, fotos de sitio) sí se cargan en la Pantalla 3
-> de [02-canvas-guia-construccion.md](02-canvas-guia-construccion.md) §4.
+> solicitud** (specs generales, fotos de sitio) sí se cargan en la pantalla de
+> Documentación (`scrDocumentacion`) — ver
+> [dataverse/05-construir-canvas-captura.md](../dataverse/05-construir-canvas-captura.md)
+> Bloque 17.
 
 ---
 

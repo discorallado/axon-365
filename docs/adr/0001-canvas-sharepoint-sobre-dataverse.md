@@ -107,7 +107,7 @@ dueño del producto, 2026-06-24.)
 
 ## Referencias
 
-- Esquema de listas: `docs/sharepoint/01-listas-esquema.md`
-- Guía Power Apps: `docs/powerapps/02-canvas-guia-construccion.md`
-- Flujos: `docs/powerautomate/03-flujos.md`
+- Esquema de listas: `docs/sharepoint/01-listas-esquema.md` *(eliminado; sucesor: [`docs/dataverse/01-tablas.md`](../dataverse/01-tablas.md))*
+- Guía Power Apps: `docs/powerapps/02-canvas-guia-construccion.md` *(eliminado; sucesor: [`docs/powerapps/06-yaml-completo-para-pegar.md`](../powerapps/06-yaml-completo-para-pegar.md))*
+- Flujos: [`docs/powerautomate/03-flujos.md`](../powerautomate/03-flujos.md)
 - Sistema original: repo `axon`, `REQ-0001` y `PublicFormWizard`.

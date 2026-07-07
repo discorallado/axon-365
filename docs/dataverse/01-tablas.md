@@ -1,7 +1,8 @@
 # Esquema de tablas Dataverse
 
-Reemplaza a `docs/sharepoint/01-listas-esquema.md` (superseded). Dos tablas con
-relación 1:N nativa; la auditoría y el historial de estados los da la plataforma.
+Reemplaza al antiguo esquema de listas SharePoint (eliminado; ver
+[ADR 0002](../adr/0002-pivote-a-dataverse.md)). Dos tablas con relación 1:N
+nativa; la auditoría y el historial de estados los da la plataforma.
 
 ```
 Solicitud (1) ──< SolicitudTablero (N)   ← relación 1:N, comportamiento Parental (cascade)
