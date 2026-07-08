@@ -103,6 +103,14 @@ App:
       // 3=Documentación). Gatea el avance por pestañas: hacia atrás siempre
       // se permite; hacia adelante solo hasta este número.
       Set(varPasoMaximo; 1);;
+      // Contador para TableroId: identifica cada tablero de forma única y
+      // estable (a diferencia de Orden, nunca se reutiliza tras un Eliminar).
+      // Necesario porque AmbienteEspecial/ProteccionesRequeridas/MarcasPreferidas
+      // son tablas anidadas dentro de la fila, y Power Fx no puede comparar
+      // registros completos por igualdad ni hacer Remove/Patch por registro
+      // cuando contienen columnas de tipo tabla — hay que identificar cada
+      // fila por un campo simple (Number) en vez de por el registro entero.
+      Set(varNextTableroId; 1);;
       // colTableros vacía PERO tipada: define todas las columnas y sus tipos
       // (esquema de cada fila = esquema de varEditIndex al editar), para que
       // varEditIndex.Campo y los IsBlank/Default no den "columna inexistente"
@@ -110,6 +118,7 @@ App:
       ClearCollect(colTableros; Filter(Table({
         Nombre:                    "";
         Cantidad:                  0;
+        TableroId:                 0;
         Orden:                     0;
         TipoEntrega:               "";
         InstalacionNuevaReemplazo: "";
@@ -584,14 +593,14 @@ Screens:
             Width: =120
             Height: =32
             OnSelect: |
-              UpdateContext({locItemAEliminar: galTableros.Selected; mostrarConfirmarEliminar: true})
+              UpdateContext({locItemAEliminar: galTableros.Selected.TableroId; mostrarConfirmarEliminar: true})
       - galTableros:
           Control: Gallery@2.15.0
           Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
           Properties:
             Items: =colTableros
             TemplateSize: =64
-            TemplateFill: =If(ThisItem = galTableros.Selected; RGBA(99;102;241;0.15); RGBA(255;255;255;1))
+            TemplateFill: =If(ThisItem.TableroId = galTableros.Selected.TableroId; RGBA(99;102;241;0.15); RGBA(255;255;255;1))
             X: =40
             Y: =240
             Width: =Parent.Width - 80
@@ -677,9 +686,9 @@ Screens:
                   Width: =136
                   OnSelect: |
                     UpdateContext({mostrarConfirmarEliminar: false});;
-                    Remove(colTableros; locItemAEliminar);;
+                    RemoveIf(colTableros; TableroId = locItemAEliminar);;
                     If(
-                      locItemAEliminar = varEditIndex;
+                      Not(IsBlank(varEditIndex)) And locItemAEliminar = varEditIndex.TableroId;
                       Set(varEditIndex; Blank());;
                       Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
                       Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
@@ -1591,6 +1600,7 @@ Screens:
                     registro: {
                       Nombre: txtNombreTablero.Text;
                       Cantidad: numCantidad.Value;
+                      TableroId: If(IsBlank(varEditIndex); varNextTableroId; varEditIndex.TableroId);
                       Orden: If(IsBlank(varEditIndex); CountRows(colTableros); varEditIndex.Orden);
                       TipoEntrega: ddTipoEntrega.Selected.Value;
                       InstalacionNuevaReemplazo: ddInstalacionNuevaReemplazo.Selected.Value;
@@ -1630,8 +1640,8 @@ Screens:
                   };
                   If(
                     IsBlank(varEditIndex);
-                    Collect(colTableros; registro);
-                    Patch(colTableros; varEditIndex; registro)
+                    Collect(colTableros; registro);; Set(varNextTableroId; varNextTableroId + 1);
+                    UpdateIf(colTableros; TableroId = varEditIndex.TableroId; registro)
                   )
                 );;
                 Set(varEditIndex; Blank());;
@@ -1932,3 +1942,17 @@ Screens:
 - Si el pegado masivo falla en algún punto puntual, no reinicies desde cero:
   identifica cuál control falló y créalo a mano — el resto del pegado ya
   construido queda intacto.
+- **Por qué existe `TableroId`:** `AmbienteEspecial`, `ProteccionesRequeridas`
+  y `MarcasPreferidas` son columnas de tipo **tabla anidada** dentro de cada
+  fila de `colTableros` (vienen de un `ModernCombobox` multiselección). Power
+  Fx **no puede comparar dos registros con `=`** ni hacer `Remove`/`Patch`
+  **por registro completo** cuando el registro contiene una columna de tipo
+  tabla — da error de tipo o "no se pueden comparar estos tipos: Record,
+  Record". Por eso cada fila lleva un campo `TableroId` (Number, asignado con
+  el contador `varNextTableroId` que nunca se reutiliza, ni siquiera tras un
+  Eliminar) y todas las operaciones que necesitan identificar "esta fila
+  puntual" (resaltado de selección, Eliminar, Guardar en modo edición) se
+  hacen comparando `TableroId` (un Number, sí comparable) en vez del registro
+  entero — con `RemoveIf`/`UpdateIf` en lugar de `Remove`/`Patch` por
+  registro. Si en el futuro agregas otra columna de tabla anidada al tablero,
+  recuerda este mismo patrón.
