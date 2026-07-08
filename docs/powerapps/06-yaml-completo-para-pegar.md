@@ -92,6 +92,10 @@ App:
     OnStart: |
       Set(varEditIndex; Blank());;
       Set(varValidarTablero; false);;
+      // Pestaña más lejana ya alcanzada válidamente (1=Contacto, 2=Tableros,
+      // 3=Documentación). Gatea el avance por pestañas: hacia atrás siempre
+      // se permite; hacia adelante solo hasta este número.
+      Set(varPasoMaximo; 1);;
       // colTableros vacía PERO tipada: define todas las columnas y sus tipos
       // (esquema de cada fila = esquema de varEditIndex al editar), para que
       // varEditIndex.Campo y los IsBlank/Default no den "columna inexistente"
@@ -367,10 +371,22 @@ Screens:
             Y: =0
             Width: =Parent.Width
             OnChange: |
-              Switch(Self.Selected.Value;
+              Switch(
+                Self.Selected.Value;
                 "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-                "Tableros";            Navigate(scrTableros; ScreenTransition.None);
-                Navigate(scrDocumentacion; ScreenTransition.None)
+                "Tableros";
+                  If(
+                    varPasoMaximo >= 2;
+                    Navigate(scrTableros; ScreenTransition.None);
+                    Notify("Completa Contacto y Proyecto antes de continuar."; NotificationType.Warning);;
+                    Reset(navPestanas)
+                  );
+                If(
+                  varPasoMaximo >= 3;
+                  Navigate(scrDocumentacion; ScreenTransition.None);
+                  Notify("Agrega al menos un tablero antes de continuar."; NotificationType.Warning);;
+                  Reset(navPestanas)
+                )
               )
       - lblTituloContacto:
           Control: ModernText@1.0.0
@@ -469,6 +485,7 @@ Screens:
                   IsBlank(ddIngenieriaPor.Selected.Value)
                 );
                 Notify("Completa los campos obligatorios."; NotificationType.Error);
+                Set(varPasoMaximo; Max(varPasoMaximo; 2));;
                 Navigate(scrTableros; ScreenTransition.Cover)
               )
 
@@ -484,10 +501,22 @@ Screens:
             Y: =0
             Width: =Parent.Width
             OnChange: |
-              Switch(Self.Selected.Value;
+              Switch(
+                Self.Selected.Value;
                 "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-                "Tableros";            Navigate(scrTableros; ScreenTransition.None);
-                Navigate(scrDocumentacion; ScreenTransition.None)
+                "Tableros";
+                  If(
+                    varPasoMaximo >= 2;
+                    Navigate(scrTableros; ScreenTransition.None);
+                    Notify("Completa Contacto y Proyecto antes de continuar."; NotificationType.Warning);;
+                    Reset(navPestanas)
+                  );
+                If(
+                  varPasoMaximo >= 3;
+                  Navigate(scrDocumentacion; ScreenTransition.None);
+                  Notify("Agrega al menos un tablero antes de continuar."; NotificationType.Warning);;
+                  Reset(navPestanas)
+                )
               )
       - lblTituloTableros:
           Control: ModernText@1.0.0
@@ -609,6 +638,7 @@ Screens:
               If(
                 CountRows(colTableros) = 0;
                 Notify("Agrega al menos un tablero antes de continuar."; NotificationType.Error);
+                Set(varPasoMaximo; Max(varPasoMaximo; 3));;
                 Navigate(scrDocumentacion; ScreenTransition.Cover)
               )
       - grpConfirmarEliminar:
@@ -1609,10 +1639,22 @@ Screens:
             Y: =0
             Width: =Parent.Width
             OnChange: |
-              Switch(Self.Selected.Value;
+              Switch(
+                Self.Selected.Value;
                 "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-                "Tableros";            Navigate(scrTableros; ScreenTransition.None);
-                Navigate(scrDocumentacion; ScreenTransition.None)
+                "Tableros";
+                  If(
+                    varPasoMaximo >= 2;
+                    Navigate(scrTableros; ScreenTransition.None);
+                    Notify("Completa Contacto y Proyecto antes de continuar."; NotificationType.Warning);;
+                    Reset(navPestanas)
+                  );
+                If(
+                  varPasoMaximo >= 3;
+                  Navigate(scrDocumentacion; ScreenTransition.None);
+                  Notify("Agrega al menos un tablero antes de continuar."; NotificationType.Warning);;
+                  Reset(navPestanas)
+                )
               )
       - txtObservacionesProyecto:
           Control: ModernTextInput@1.1.1

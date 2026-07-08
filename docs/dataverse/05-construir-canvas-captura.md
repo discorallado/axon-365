@@ -119,33 +119,55 @@ son un sub-flujo aparte); la única diferencia entre copias es el `Default`
    - En `scrContactoProyecto`: `"Contacto y Proyecto"`
    - En `scrTableros`: `"Tableros"`
    - En `scrDocumentacion`: `"Documentación"`
-4. **`OnChange`** (igual en las 3 copias) — navega según la pestaña elegida.
-   `OnChange` solo dispara cuando el usuario cambia de pestaña (no si toca la
-   ya activa), así que no navega en falso a la misma pantalla:
+4. **`OnChange`** (igual en las 3 copias) — navega según la pestaña elegida,
+   pero **gatea el avance hacia adelante** con `varPasoMaximo` (variable global
+   que trackea hasta qué pestaña ya se validó: `1` = Contacto, `2` = Tableros,
+   `3` = Documentación; se inicializa en `App.OnStart` — Bloque 14). Hacia
+   **atrás** siempre navega libre, sin condición — solo lo de adelante se
+   bloquea. `OnChange` solo dispara cuando el usuario cambia de pestaña (no si
+   toca la ya activa), así que no navega en falso a la misma pantalla:
    ```
-   Switch(Self.Selected.Value;
+   Switch(
+     Self.Selected.Value;
      "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-     "Tableros";            Navigate(scrTableros; ScreenTransition.None);
-     Navigate(scrDocumentacion; ScreenTransition.None)
+     "Tableros";
+       If(
+         varPasoMaximo >= 2;
+         Navigate(scrTableros; ScreenTransition.None);
+         Notify("Completa Contacto y Proyecto antes de continuar."; NotificationType.Warning);;
+         Reset(navPestanas)
+       );
+     If(
+       varPasoMaximo >= 3;
+       Navigate(scrDocumentacion; ScreenTransition.None);
+       Notify("Agrega al menos un tablero antes de continuar."; NotificationType.Warning);;
+       Reset(navPestanas)
+     )
    )
    ```
-5. (Opcional) `Appearance: =TabListAppearance.Underline` para el estilo visual
+   El `Reset(navPestanas)` es necesario porque `ModernTabList` marca
+   visualmente la pestaña tocada por su cuenta (estado interno del control);
+   sin el `Reset`, si el usuario toca "Documentación" y se bloquea, la pestaña
+   quedaría marcada como activa aunque la app siga en la pantalla anterior.
+   `Reset` la vuelve a mostrar según su `Default`.
+5. **`varPasoMaximo` se actualiza en dos lugares** (no en la barra de
+   pestañas): en el `OnSelect` de **`btnSiguiente`** de `scrContactoProyecto`
+   (Bloque 15) agrega `Set(varPasoMaximo; Max(varPasoMaximo; 2));;` justo antes
+   del `Navigate(scrTableros; ...)` de la rama válida; en el `OnSelect` de
+   **`btnSiguienteTableros`** de `scrTableros` (Bloque 16) agrega
+   `Set(varPasoMaximo; Max(varPasoMaximo; 3));;` antes del
+   `Navigate(scrDocumentacion; ...)`. El `Max(...)` evita que retroceder y
+   volver a avanzar baje el valor ya alcanzado.
+6. (Opcional) `Appearance: =TabListAppearance.Underline` para el estilo visual
    de subrayado bajo la pestaña activa.
-
-> **Las pestañas navegan libremente** (sin validar) — es intencional: sirven
-> para revisar/editar cualquier sección sin bloqueos. La validación real de
-> "¿puedo avanzar?" vive en el botón **Siguiente** de cada pantalla (Bloques
-> 15-17), no en las pestañas. Si prefieres bloquear el salto a "Documentación"
-> hasta que "Tableros" tenga al menos un tablero, envuelve esa rama del
-> `Switch` con la misma condición del Bloque 16
-> (`If(CountRows(colTableros) = 0; Notify(...); Navigate(scrDocumentacion; ...))`)
-> en las 3 copias.
 
 ✅ *Verificable:* las 3 pantallas con pestaña muestran la misma barra arriba;
 la pestaña de la pantalla en la que estás parado aparece marcada como activa
-(por el `Default` de esa copia); tocar otra pestaña navega ahí sin perder los
-datos ya escritos (los controles retienen su valor al navegar entre
-pantallas dentro de la misma sesión de la app).
+(por el `Default` de esa copia); **retroceder** a una pestaña ya completada
+navega libre sin perder los datos ya escritos; **saltar hacia adelante** antes
+de completar la pestaña anterior muestra el `Notify` de advertencia y no
+navega (la pestaña vuelve a mostrarse en la posición correcta gracias al
+`Reset`).
 
 ---
 
