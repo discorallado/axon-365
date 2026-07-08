@@ -27,16 +27,23 @@ scrContactoProyecto ─Siguiente→ scrTableros ─Agregar/Editar→ scrTableroF
 scrTableros ─Siguiente→ scrDocumentacion ─Enviar→ scrConfirmacion
 ```
 
-- **Pestañas principales** (`ModernTabList`, `navPestanas`) solo en las 3
-  pantallas "principales": `scrContactoProyecto`, `scrTableros`,
-  `scrDocumentacion`.
-- Las **4 pantallas del tablero** (`scrTableroForm`, `2a`, `2b`, `3`) llevan su
-  propia **barra de sub-pestañas** (`ModernTabList`, `navSubPasos` — "1.
-  Identificación / 2. Ubicación y montaje / 3. Eléctrico / 4. Constructivo")
-  para saltar directo a cualquier etapa, **además** de los botones
-  Atrás/Siguiente para el recorrido lineal. Se entra desde `scrTableros`
-  (Agregar o Editar) y se sale por `scrTableros` (Guardar tablero en el paso 4,
-  o **Cancelar** con confirmación en cualquier paso).
+- **Pestañas principales** (`ModernTabList`, `navPestanas`) en las 3 pantallas
+  "principales" (`scrContactoProyecto`, `scrTableros`, `scrDocumentacion`)
+  **y también** en las 4 pantallas del tablero (siempre marcando "Tableros"
+  como activa) — mismo control en las 7 pantallas, solo cambia el `Default`
+  (y el `DisplayMode`, ver abajo).
+- Las **4 pantallas del tablero** (`scrTableroForm`, `2a`, `2b`, `3`) llevan
+  **doble barra apilada**: `navPestanas` arriba (Y=0) + su propia **barra de
+  sub-pestañas** debajo (`ModernTabList`, `navSubPasos` — "1. Identificación /
+  2. Ubicación y montaje / 3. Eléctrico / 4. Constructivo", Y=40). Ambas son
+  **solo indicativas** (`DisplayMode: =DisplayMode.View` — sin clic, sin
+  hover): muestran en qué sección y en qué paso está el usuario, pero **no
+  navegan**. Dentro del sub-flujo del tablero, la única forma de moverse es
+  **Atrás/Siguiente** (que sí validan cada paso) o **Cancelar**/**Guardar
+  tablero** — así no hay forma de saltarse la validación por pestaña, ni en
+  las 3 pantallas principales ni dentro del tablero. Se entra desde
+  `scrTableros` (Agregar o Editar) y se sale por `scrTableros` (Guardar
+  tablero en el paso 4, o **Cancelar** con confirmación en cualquier paso).
 - Los valores de los controles **se conservan** al navegar entre las 4
   pantallas del tablero — Power Apps no destruye los controles de pantallas
   no visibles, así que un control del paso 4 puede leer uno del paso 1, y no
@@ -699,29 +706,33 @@ Screens:
 
   scrTableroForm:
     Children:
+      - navPestanas:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Default: ="Tableros"
+            Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
+            X: =0
+            Y: =0
+            Width: =Parent.Width
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="1. Identificación"
             Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
             X: =0
-            Y: =0
+            Y: =40
             Width: =Parent.Width
-            OnChange: |
-              Switch(Self.Selected.Value;
-                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
-                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
-                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
-                Navigate(scrTableroForm3; ScreenTransition.None)
-              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 1 de 4: Identificación"
             X: =40
-            Y: =56
+            Y: =96
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -733,7 +744,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoEntrega; Value = varEditIndex.TipoEntrega))
             X: =40
-            Y: =84
+            Y: =124
             Width: =400
       - ddInstalacionNuevaReemplazo:
           Control: ModernDropdown@1.0.2
@@ -743,7 +754,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcInstalacionNuevaReemplazo; Value = varEditIndex.InstalacionNuevaReemplazo))
             X: =460
-            Y: =84
+            Y: =124
             Width: =400
       - txtNombreTablero:
           Control: ModernTextInput@1.1.1
@@ -751,7 +762,7 @@ Screens:
             Placeholder: ="Nombre del tablero * (Ej.: TG Principal)"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.Nombre)
             X: =40
-            Y: =140
+            Y: =180
             Width: =400
       - numCantidad:
           Control: ModernNumberInput@1.1.1
@@ -762,7 +773,7 @@ Screens:
             Max: =999
             Precision: =DecimalPrecision.'0'
             X: =460
-            Y: =140
+            Y: =180
             Width: =200
       - ddTipoTablero:
           Control: ModernDropdown@1.0.2
@@ -773,7 +784,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoTablero; Value = varEditIndex.TipoTablero))
             X: =40
-            Y: =196
+            Y: =236
             Width: =400
       - txtOtroTipoTablero:
           Control: ModernTextInput@1.1.1
@@ -782,7 +793,7 @@ Screens:
             Placeholder: ="Especifica el tipo de tablero"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.OtroTipoTablero)
             X: =460
-            Y: =196
+            Y: =236
             Width: =400
       - txtFuncionTablero:
           Control: ModernTextInput@1.1.1
@@ -791,7 +802,7 @@ Screens:
             Placeholder: ="Función del tablero"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.FuncionTablero)
             X: =40
-            Y: =252
+            Y: =292
             Width: =820
             Height: =72
       - txtCargasAAlimentar:
@@ -801,7 +812,7 @@ Screens:
             Placeholder: ="Cargas a alimentar"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.CargasAAlimentar)
             X: =40
-            Y: =336
+            Y: =376
             Width: =820
             Height: =72
       - numNumeroCircuitos:
@@ -812,7 +823,7 @@ Screens:
             Min: =0
             Precision: =DecimalPrecision.'0'
             X: =40
-            Y: =420
+            Y: =460
             Width: =200
       - lblPendientes:
           Control: ModernText@1.0.0
@@ -903,29 +914,33 @@ Screens:
 
   scrTableroForm2a:
     Children:
+      - navPestanas:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Default: ="Tableros"
+            Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
+            X: =0
+            Y: =0
+            Width: =Parent.Width
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="2. Ubicación y montaje"
             Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
             X: =0
-            Y: =0
+            Y: =40
             Width: =Parent.Width
-            OnChange: |
-              Switch(Self.Selected.Value;
-                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
-                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
-                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
-                Navigate(scrTableroForm3; ScreenTransition.None)
-              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 2 de 4: Ubicación, ambiente y montaje"
             X: =40
-            Y: =56
+            Y: =96
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -937,7 +952,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcUbicacion; Value = varEditIndex.Ubicacion))
             X: =40
-            Y: =84
+            Y: =124
             Width: =400
       - cmbAmbienteEspecial:
           Control: ModernCombobox@1.1.1
@@ -947,7 +962,7 @@ Screens:
             SelectMultiple: =true
             DefaultSelectedItems: =If(IsBlank(varEditIndex); Table(); varEditIndex.AmbienteEspecial)
             X: =460
-            Y: =84
+            Y: =124
             Width: =400
       - txtOtroAmbiente:
           Control: ModernTextInput@1.1.1
@@ -956,7 +971,7 @@ Screens:
             Placeholder: ="Especifica el ambiente especial"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.OtroAmbienteEspecial)
             X: =40
-            Y: =140
+            Y: =180
             Width: =400
       - ddGradoIP:
           Control: ModernDropdown@1.0.2
@@ -970,7 +985,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); {Value: varEditIndex.GradoIP})
             X: =460
-            Y: =140
+            Y: =180
             Width: =200
       - ddGradoIK:
           Control: ModernDropdown@1.0.2
@@ -981,7 +996,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); {Value: varEditIndex.GradoIK})
             X: =676
-            Y: =140
+            Y: =180
             Width: =184
       - ddTipoMontaje:
           Control: ModernDropdown@1.0.2
@@ -991,7 +1006,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoMontaje; Value = varEditIndex.TipoMontaje))
             X: =40
-            Y: =196
+            Y: =236
             Width: =400
       - ddRestricciones:
           Control: ModernDropdown@1.0.2
@@ -1001,7 +1016,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); LookUp(colOpcSiNo; Value = false); LookUp(colOpcSiNo; Value = varEditIndex.RestriccionesDimension))
             X: =460
-            Y: =196
+            Y: =236
             Width: =300
       - numAltoMax:
           Control: ModernNumberInput@1.1.1
@@ -1012,7 +1027,7 @@ Screens:
             Min: =0
             Precision: =DecimalPrecision.'0'
             X: =40
-            Y: =252
+            Y: =292
             Width: =200
       - numAnchoMax:
           Control: ModernNumberInput@1.1.1
@@ -1023,7 +1038,7 @@ Screens:
             Min: =0
             Precision: =DecimalPrecision.'0'
             X: =256
-            Y: =252
+            Y: =292
             Width: =200
       - numFondoMax:
           Control: ModernNumberInput@1.1.1
@@ -1034,7 +1049,7 @@ Screens:
             Min: =0
             Precision: =DecimalPrecision.'0'
             X: =472
-            Y: =252
+            Y: =292
             Width: =200
       - txtCondicionesInstalacion:
           Control: ModernTextInput@1.1.1
@@ -1043,7 +1058,7 @@ Screens:
             Placeholder: ="Condiciones adicionales de instalación"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.CondicionesInstalacion)
             X: =40
-            Y: =308
+            Y: =348
             Width: =820
             Height: =72
       - lblPendientes:
@@ -1143,29 +1158,33 @@ Screens:
 
   scrTableroForm2b:
     Children:
+      - navPestanas:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Default: ="Tableros"
+            Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
+            X: =0
+            Y: =0
+            Width: =Parent.Width
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="3. Eléctrico"
             Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
             X: =0
-            Y: =0
+            Y: =40
             Width: =Parent.Width
-            OnChange: |
-              Switch(Self.Selected.Value;
-                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
-                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
-                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
-                Navigate(scrTableroForm3; ScreenTransition.None)
-              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 3 de 4: Parámetros eléctricos"
             X: =40
-            Y: =56
+            Y: =96
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -1177,7 +1196,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTension; Value = varEditIndex.TensionSuministro))
             X: =40
-            Y: =84
+            Y: =124
             Width: =300
       - numOtraTension:
           Control: ModernNumberInput@1.1.1
@@ -1187,7 +1206,7 @@ Screens:
             Default: =If(IsBlank(varEditIndex); 0; varEditIndex.OtraTension)
             Min: =0
             X: =356
-            Y: =84
+            Y: =124
             Width: =200
       - ddSistema:
           Control: ModernDropdown@1.0.2
@@ -1197,7 +1216,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcSistema; Value = varEditIndex.SistemaElectrico))
             X: =572
-            Y: =84
+            Y: =124
             Width: =288
       - txtOtroSistema:
           Control: ModernTextInput@1.1.1
@@ -1206,7 +1225,7 @@ Screens:
             Placeholder: ="Especifica el sistema eléctrico"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.OtroSistemaElectrico)
             X: =40
-            Y: =140
+            Y: =180
             Width: =400
       - numPotencia:
           Control: ModernNumberInput@1.1.1
@@ -1216,7 +1235,7 @@ Screens:
             Min: =0
             Precision: =DecimalPrecision.'2'
             X: =460
-            Y: =140
+            Y: =180
             Width: =200
       - ddUnidadPotencia:
           Control: ModernDropdown@1.0.2
@@ -1226,7 +1245,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); LookUp(colOpcUnidadPotencia; Value="kW"); LookUp(colOpcUnidadPotencia; Value = varEditIndex.UnidadPotencia))
             X: =676
-            Y: =140
+            Y: =180
             Width: =184
       - lblCorriente:
           Control: ModernText@1.0.0
@@ -1249,7 +1268,7 @@ Screens:
                 )
               )
             X: =40
-            Y: =196
+            Y: =236
             Width: =400
       - ddFrecuencia:
           Control: ModernDropdown@1.0.2
@@ -1259,7 +1278,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcFrecuencia; Value = varEditIndex.Frecuencia))
             X: =460
-            Y: =196
+            Y: =236
             Width: =200
       - numOtraFrecuencia:
           Control: ModernNumberInput@1.1.1
@@ -1269,7 +1288,7 @@ Screens:
             Default: =If(IsBlank(varEditIndex); 0; varEditIndex.OtraFrecuencia)
             Min: =0
             X: =676
-            Y: =196
+            Y: =236
             Width: =184
       - cmbProteccionesRequeridas:
           Control: ModernCombobox@1.1.1
@@ -1279,7 +1298,7 @@ Screens:
             SelectMultiple: =true
             DefaultSelectedItems: =If(IsBlank(varEditIndex); Table(); varEditIndex.ProteccionesRequeridas)
             X: =40
-            Y: =252
+            Y: =292
             Width: =400
       - cmbMarcasPreferidas:
           Control: ModernCombobox@1.1.1
@@ -1289,7 +1308,7 @@ Screens:
             SelectMultiple: =true
             DefaultSelectedItems: =If(IsBlank(varEditIndex); Table(); varEditIndex.MarcasPreferidas)
             X: =460
-            Y: =252
+            Y: =292
             Width: =400
       - lblPendientes:
           Control: ModernText@1.0.0
@@ -1388,29 +1407,33 @@ Screens:
 
   scrTableroForm3:
     Children:
+      - navPestanas:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Default: ="Tableros"
+            Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
+            X: =0
+            Y: =0
+            Width: =Parent.Width
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="4. Constructivo"
             Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
             X: =0
-            Y: =0
+            Y: =40
             Width: =Parent.Width
-            OnChange: |
-              Switch(Self.Selected.Value;
-                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
-                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
-                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
-                Navigate(scrTableroForm3; ScreenTransition.None)
-              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 4 de 4: Diseño constructivo"
             X: =40
-            Y: =56
+            Y: =96
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -1422,7 +1445,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcMaterialGabinete; Value = varEditIndex.MaterialGabinete))
             X: =40
-            Y: =84
+            Y: =124
             Width: =400
       - ddColorGabinete:
           Control: ModernDropdown@1.0.2
@@ -1432,7 +1455,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); LookUp(colOpcColorGabinete; Value="7035"); LookUp(colOpcColorGabinete; Value = varEditIndex.ColorGabinete))
             X: =460
-            Y: =84
+            Y: =124
             Width: =400
       - ddTipoVentilacion:
           Control: ModernDropdown@1.0.2
@@ -1442,7 +1465,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoVentilacion; Value = varEditIndex.TipoVentilacion))
             X: =40
-            Y: =140
+            Y: =180
             Width: =400
       - ddExpansionFutura:
           Control: ModernDropdown@1.0.2
@@ -1452,7 +1475,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcExpansionFutura; Value = varEditIndex.ExpansionFutura))
             X: =460
-            Y: =140
+            Y: =180
             Width: =400
       - txtObservacionesTablero:
           Control: ModernTextInput@1.1.1
@@ -1461,7 +1484,7 @@ Screens:
             Placeholder: ="Observaciones del tablero"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.ObservacionesTablero)
             X: =40
-            Y: =196
+            Y: =236
             Width: =820
             Height: =72
       - lblPendientes:

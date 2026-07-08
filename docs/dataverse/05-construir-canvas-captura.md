@@ -25,15 +25,22 @@ clásicos). Mapeo completo clásico → Modern en
 - **`scrTableroForm` / `scrTableroForm2a` / `scrTableroForm2b` / `scrTableroForm3`**
   — las ~37 columnas del tablero repartidas en **4 pantallas** (una por grupo
   de campos: Identificación / Ubicación-ambiente-montaje / Eléctrico / Diseño
-  constructivo). No llevan la barra de pestañas principal, pero **sí una barra
-  de sub-pestañas** (`navSubPasos`) para saltar directo entre las 4 etapas,
-  además de los botones Atrás/Siguiente. Se entra y sale desde `scrTableros`
-  (Agregar o Editar → paso 1; Guardar tablero en el paso 4 → vuelve a
-  `scrTableros`; Cancelar/Atrás piden confirmación). Traen la **capa a prueba
-  de tontos** (banner de pendientes, error por paso, Guardar que salta al primer
-  hueco — ver la sección "Capa a prueba de tontos" del 06). Se decidió repartir
-  en 4 pantallas (en vez de un solo panel con todo junto) porque 35 campos en un
-  panel resultaban muy densos para el editor. YAML completo de las 4 en
+  constructivo). Llevan **doble barra apilada**: la barra de pestañas
+  principal arriba (`navPestanas`, siempre marcando "Tableros") + su propia
+  **barra de sub-pestañas** debajo (`navSubPasos`, marcando la etapa actual de
+  las 4). **Ambas son solo indicativas** (`DisplayMode: =DisplayMode.View` —
+  sin clic, sin hover): orientan sobre dónde está el usuario, pero no
+  navegan. Dentro de este sub-flujo la única forma de moverse es
+  **Atrás/Siguiente** (que validan cada paso) o **Cancelar**/**Guardar
+  tablero** — así no hay atajo que se salte la validación, ni desde las
+  pestañas principales ni desde las sub-pestañas. Se entra y sale desde
+  `scrTableros` (Agregar o Editar → paso 1; Guardar tablero en el paso 4 →
+  vuelve a `scrTableros`; Cancelar/Atrás piden confirmación). Traen la **capa
+  a prueba de tontos** (banner de pendientes, error por paso, Guardar que
+  salta al primer hueco — ver la sección "Capa a prueba de tontos" del 06). Se
+  decidió repartir en 4 pantallas (en vez de un solo panel con todo junto)
+  porque 35 campos en un panel resultaban muy densos para el editor. YAML
+  completo de las 4 en
   [docs/powerapps/06-yaml-completo-para-pegar.md](../powerapps/06-yaml-completo-para-pegar.md).
 - **`scrDocumentacion`** — Adjuntos, observaciones y el botón **Enviar
   solicitud**. Pestaña.
@@ -207,7 +214,15 @@ confirmar eliminar) en
 [docs/powerapps/06-yaml-completo-para-pegar.md](../powerapps/06-yaml-completo-para-pegar.md) —
 ese documento ya trae la arquitectura de 8 pantallas completa, control por
 control. Agrega la **barra de pestañas** del Bloque 14b arriba de todo en
-`scrTableros` únicamente (las 4 pantallas del formulario no la llevan).
+`scrTableros` (funcional, como en las otras 2 pantallas principales). En las
+**4 pantallas del formulario** agrega **las dos barras apiladas**: una copia
+más de `navPestanas` en `Y=0` (`Default: ="Tableros"`) y, debajo, `navSubPasos`
+en `Y=40` — a **ambas** ponles `DisplayMode: =DisplayMode.View` (solo
+indicativas: sin clic, sin hover) para que dentro del sub-flujo del tablero la
+única forma de avanzar sea Atrás/Siguiente/Guardar, nunca saltando de
+pestaña. Baja el resto de los campos de cada pantalla ~40px para que no
+queden tapados por la segunda barra (coordenadas ya ajustadas en el YAML
+del 06).
 
 ✅ *Verificable:* **Agregar Tablero** limpia los 4 pasos (modo "nuevo") y
 navega al paso 1; seleccionar una fila de la galería y tocar **Editar** carga
@@ -215,7 +230,9 @@ sus valores y navega al paso 1; **Atrás/Siguiente** se mueve entre los 4
 pasos validando solo los campos de cada uno; **Guardar tablero** en el paso 4
 agrega/actualiza el tablero en la galería y vuelve a `scrTableros`;
 **Siguiente** en `scrTableros` con la galería vacía muestra el error y no
-navega.
+navega; dentro de las 4 pantallas del tablero, tocar cualquier pestaña de
+cualquiera de las dos barras **no navega a ningún lado** y no muestra ningún
+resaltado al pasar el mouse por encima (indicativas puras).
 
 ---
 

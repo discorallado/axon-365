@@ -56,9 +56,11 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
    [docs/dataverse/01-tablas.md](docs/dataverse/01-tablas.md).
 3. **App Canvas de captura** — controles **Modern** (Fluent), **8 pantallas**:
    Contacto y Proyecto / Tableros (galería) / Documentación (con
-   `ModernTabList` compartido) + las **4 pantallas del formulario del
-   tablero** (Identificación / Ubicación-ambiente-montaje / Eléctrico /
-   Diseño constructivo, sin pestañas, con Atrás/Siguiente) + confirmación.
+   `ModernTabList` compartido, funcional) + las **4 pantallas del formulario
+   del tablero** (Identificación / Ubicación-ambiente-montaje / Eléctrico /
+   Diseño constructivo, con doble barra de pestañas **solo indicativa** —
+   principal + sub-pasos, sin clic ni hover — y Atrás/Siguiente) +
+   confirmación.
    Construcción clic por clic en
    [docs/dataverse/05-construir-canvas-captura.md](docs/dataverse/05-construir-canvas-captura.md),
    o de una vez con el YAML completo en
@@ -96,8 +98,10 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 - [x] YAML completo consolidado (`App` + las 8 pantallas en un solo archivo),
       **probado con éxito en Studio real** — para pegado masivo en Studio o
       Git integration/CLI (`powerapps/06`)
-- [x] Tablero con **sub-pestañas** (`navSubPasos` en las 4 pantallas del tablero,
-      además de Atrás/Siguiente) + **capa a prueba de tontos**: fórmulas de
+- [x] Tablero con **doble barra de pestañas indicativa** (`navPestanas` +
+      `navSubPasos` apiladas en las 4 pantallas del tablero, ambas
+      `DisplayMode: =DisplayMode.View` — sin clic, sin hover; solo
+      Atrás/Siguiente navega) + **capa a prueba de tontos**: fórmulas de
       completitud en `App.Formulas`, banner de pendientes en vivo, error por
       paso (`varValidarTablero`), Cancelar/Atrás con confirmación, y Guardar que
       salta al primer paso incompleto (`powerapps/06`)
