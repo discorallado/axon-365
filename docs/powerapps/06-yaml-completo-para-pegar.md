@@ -27,16 +27,23 @@ scrContactoProyecto ─Siguiente→ scrTableros ─Agregar/Editar→ scrTableroF
 scrTableros ─Siguiente→ scrDocumentacion ─Enviar→ scrConfirmacion
 ```
 
-- **Pestañas principales** (`ModernTabList`, `navPestanas`) solo en las 3
-  pantallas "principales": `scrContactoProyecto`, `scrTableros`,
-  `scrDocumentacion`.
-- Las **4 pantallas del tablero** (`scrTableroForm`, `2a`, `2b`, `3`) llevan su
-  propia **barra de sub-pestañas** (`ModernTabList`, `navSubPasos` — "1.
-  Identificación / 2. Ubicación y montaje / 3. Eléctrico / 4. Constructivo")
-  para saltar directo a cualquier etapa, **además** de los botones
-  Atrás/Siguiente para el recorrido lineal. Se entra desde `scrTableros`
-  (Agregar o Editar) y se sale por `scrTableros` (Guardar tablero en el paso 4,
-  o **Cancelar** con confirmación en cualquier paso).
+- **Pestañas principales** (`ModernTabList`, `navPestanas`) en las 3 pantallas
+  "principales" (`scrContactoProyecto`, `scrTableros`, `scrDocumentacion`)
+  **y también** en las 4 pantallas del tablero (siempre marcando "Tableros"
+  como activa) — mismo control en las 7 pantallas, solo cambia el `Default`
+  (y el `DisplayMode`, ver abajo).
+- Las **4 pantallas del tablero** (`scrTableroForm`, `2a`, `2b`, `3`) llevan
+  **doble barra apilada**: `navPestanas` arriba (Y=0) + su propia **barra de
+  sub-pestañas** debajo (`ModernTabList`, `navSubPasos` — "1. Identificación /
+  2. Ubicación y montaje / 3. Eléctrico / 4. Constructivo", Y=40). Ambas son
+  **solo indicativas** (`DisplayMode: =DisplayMode.View` — sin clic, sin
+  hover): muestran en qué sección y en qué paso está el usuario, pero **no
+  navegan**. Dentro del sub-flujo del tablero, la única forma de moverse es
+  **Atrás/Siguiente** (que sí validan cada paso) o **Cancelar**/**Guardar
+  tablero** — así no hay forma de saltarse la validación por pestaña, ni en
+  las 3 pantallas principales ni dentro del tablero. Se entra desde
+  `scrTableros` (Agregar o Editar) y se sale por `scrTableros` (Guardar
+  tablero en el paso 4, o **Cancelar** con confirmación en cualquier paso).
 - Los valores de los controles **se conservan** al navegar entre las 4
   pantallas del tablero — Power Apps no destruye los controles de pantallas
   no visibles, así que un control del paso 4 puede leer uno del paso 1, y no
@@ -92,6 +99,18 @@ App:
     OnStart: |
       Set(varEditIndex; Blank());;
       Set(varValidarTablero; false);;
+      // Pestaña más lejana ya alcanzada válidamente (1=Contacto, 2=Tableros,
+      // 3=Documentación). Gatea el avance por pestañas: hacia atrás siempre
+      // se permite; hacia adelante solo hasta este número.
+      Set(varPasoMaximo; 1);;
+      // Contador para TableroId: identifica cada tablero de forma única y
+      // estable (a diferencia de Orden, nunca se reutiliza tras un Eliminar).
+      // Necesario porque AmbienteEspecial/ProteccionesRequeridas/MarcasPreferidas
+      // son tablas anidadas dentro de la fila, y Power Fx no puede comparar
+      // registros completos por igualdad ni hacer Remove/Patch por registro
+      // cuando contienen columnas de tipo tabla — hay que identificar cada
+      // fila por un campo simple (Number) en vez de por el registro entero.
+      Set(varNextTableroId; 1);;
       // colTableros vacía PERO tipada: define todas las columnas y sus tipos
       // (esquema de cada fila = esquema de varEditIndex al editar), para que
       // varEditIndex.Campo y los IsBlank/Default no den "columna inexistente"
@@ -99,6 +118,7 @@ App:
       ClearCollect(colTableros; Filter(Table({
         Nombre:                    "";
         Cantidad:                  0;
+        TableroId:                 0;
         Orden:                     0;
         TipoEntrega:               "";
         InstalacionNuevaReemplazo: "";
@@ -367,10 +387,22 @@ Screens:
             Y: =0
             Width: =Parent.Width
             OnChange: |
-              Switch(Self.Selected.Value;
+              Switch(
+                Self.Selected.Value;
                 "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-                "Tableros";            Navigate(scrTableros; ScreenTransition.None);
-                Navigate(scrDocumentacion; ScreenTransition.None)
+                "Tableros";
+                  If(
+                    varPasoMaximo >= 2;
+                    Navigate(scrTableros; ScreenTransition.None);
+                    Notify("Completa Contacto y Proyecto antes de continuar."; NotificationType.Warning);;
+                    Reset(navPestanas)
+                  );
+                If(
+                  varPasoMaximo >= 3;
+                  Navigate(scrDocumentacion; ScreenTransition.None);
+                  Notify("Agrega al menos un tablero antes de continuar."; NotificationType.Warning);;
+                  Reset(navPestanas)
+                )
               )
       - lblTituloContacto:
           Control: ModernText@1.0.0
@@ -469,6 +501,7 @@ Screens:
                   IsBlank(ddIngenieriaPor.Selected.Value)
                 );
                 Notify("Completa los campos obligatorios."; NotificationType.Error);
+                Set(varPasoMaximo; Max(varPasoMaximo; 2));;
                 Navigate(scrTableros; ScreenTransition.Cover)
               )
 
@@ -484,10 +517,22 @@ Screens:
             Y: =0
             Width: =Parent.Width
             OnChange: |
-              Switch(Self.Selected.Value;
+              Switch(
+                Self.Selected.Value;
                 "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-                "Tableros";            Navigate(scrTableros; ScreenTransition.None);
-                Navigate(scrDocumentacion; ScreenTransition.None)
+                "Tableros";
+                  If(
+                    varPasoMaximo >= 2;
+                    Navigate(scrTableros; ScreenTransition.None);
+                    Notify("Completa Contacto y Proyecto antes de continuar."; NotificationType.Warning);;
+                    Reset(navPestanas)
+                  );
+                If(
+                  varPasoMaximo >= 3;
+                  Navigate(scrDocumentacion; ScreenTransition.None);
+                  Notify("Agrega al menos un tablero antes de continuar."; NotificationType.Warning);;
+                  Reset(navPestanas)
+                )
               )
       - lblTituloTableros:
           Control: ModernText@1.0.0
@@ -548,14 +593,14 @@ Screens:
             Width: =120
             Height: =32
             OnSelect: |
-              UpdateContext({locItemAEliminar: galTableros.Selected; mostrarConfirmarEliminar: true})
+              UpdateContext({locItemAEliminar: galTableros.Selected.TableroId; mostrarConfirmarEliminar: true})
       - galTableros:
           Control: Gallery@2.15.0
           Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
           Properties:
             Items: =colTableros
             TemplateSize: =64
-            TemplateFill: =If(ThisItem = galTableros.Selected; RGBA(99;102;241;0.15); RGBA(255;255;255;1))
+            TemplateFill: =If(ThisItem.TableroId = galTableros.Selected.TableroId; RGBA(99;102;241;0.15); RGBA(255;255;255;1))
             X: =40
             Y: =240
             Width: =Parent.Width - 80
@@ -609,6 +654,7 @@ Screens:
               If(
                 CountRows(colTableros) = 0;
                 Notify("Agrega al menos un tablero antes de continuar."; NotificationType.Error);
+                Set(varPasoMaximo; Max(varPasoMaximo; 3));;
                 Navigate(scrDocumentacion; ScreenTransition.Cover)
               )
       - grpConfirmarEliminar:
@@ -640,9 +686,9 @@ Screens:
                   Width: =136
                   OnSelect: |
                     UpdateContext({mostrarConfirmarEliminar: false});;
-                    Remove(colTableros; locItemAEliminar);;
+                    RemoveIf(colTableros; TableroId = locItemAEliminar);;
                     If(
-                      locItemAEliminar = varEditIndex;
+                      Not(IsBlank(varEditIndex)) And locItemAEliminar = varEditIndex.TableroId;
                       Set(varEditIndex; Blank());;
                       Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
                       Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
@@ -669,29 +715,33 @@ Screens:
 
   scrTableroForm:
     Children:
+      - navPestanas:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Default: ="Tableros"
+            Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
+            X: =0
+            Y: =0
+            Width: =Parent.Width
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="1. Identificación"
             Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
             X: =0
-            Y: =0
+            Y: =40
             Width: =Parent.Width
-            OnChange: |
-              Switch(Self.Selected.Value;
-                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
-                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
-                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
-                Navigate(scrTableroForm3; ScreenTransition.None)
-              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 1 de 4: Identificación"
             X: =40
-            Y: =56
+            Y: =96
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -703,7 +753,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoEntrega; Value = varEditIndex.TipoEntrega))
             X: =40
-            Y: =84
+            Y: =124
             Width: =400
       - ddInstalacionNuevaReemplazo:
           Control: ModernDropdown@1.0.2
@@ -713,7 +763,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcInstalacionNuevaReemplazo; Value = varEditIndex.InstalacionNuevaReemplazo))
             X: =460
-            Y: =84
+            Y: =124
             Width: =400
       - txtNombreTablero:
           Control: ModernTextInput@1.1.1
@@ -721,7 +771,7 @@ Screens:
             Placeholder: ="Nombre del tablero * (Ej.: TG Principal)"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.Nombre)
             X: =40
-            Y: =140
+            Y: =180
             Width: =400
       - numCantidad:
           Control: ModernNumberInput@1.1.1
@@ -732,7 +782,7 @@ Screens:
             Max: =999
             Precision: =DecimalPrecision.'0'
             X: =460
-            Y: =140
+            Y: =180
             Width: =200
       - ddTipoTablero:
           Control: ModernDropdown@1.0.2
@@ -743,7 +793,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoTablero; Value = varEditIndex.TipoTablero))
             X: =40
-            Y: =196
+            Y: =236
             Width: =400
       - txtOtroTipoTablero:
           Control: ModernTextInput@1.1.1
@@ -752,7 +802,7 @@ Screens:
             Placeholder: ="Especifica el tipo de tablero"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.OtroTipoTablero)
             X: =460
-            Y: =196
+            Y: =236
             Width: =400
       - txtFuncionTablero:
           Control: ModernTextInput@1.1.1
@@ -761,7 +811,7 @@ Screens:
             Placeholder: ="Función del tablero"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.FuncionTablero)
             X: =40
-            Y: =252
+            Y: =292
             Width: =820
             Height: =72
       - txtCargasAAlimentar:
@@ -771,7 +821,7 @@ Screens:
             Placeholder: ="Cargas a alimentar"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.CargasAAlimentar)
             X: =40
-            Y: =336
+            Y: =376
             Width: =820
             Height: =72
       - numNumeroCircuitos:
@@ -782,7 +832,7 @@ Screens:
             Min: =0
             Precision: =DecimalPrecision.'0'
             X: =40
-            Y: =420
+            Y: =460
             Width: =200
       - lblPendientes:
           Control: ModernText@1.0.0
@@ -873,29 +923,33 @@ Screens:
 
   scrTableroForm2a:
     Children:
+      - navPestanas:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Default: ="Tableros"
+            Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
+            X: =0
+            Y: =0
+            Width: =Parent.Width
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="2. Ubicación y montaje"
             Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
             X: =0
-            Y: =0
+            Y: =40
             Width: =Parent.Width
-            OnChange: |
-              Switch(Self.Selected.Value;
-                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
-                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
-                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
-                Navigate(scrTableroForm3; ScreenTransition.None)
-              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 2 de 4: Ubicación, ambiente y montaje"
             X: =40
-            Y: =56
+            Y: =96
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -907,7 +961,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcUbicacion; Value = varEditIndex.Ubicacion))
             X: =40
-            Y: =84
+            Y: =124
             Width: =400
       - cmbAmbienteEspecial:
           Control: ModernCombobox@1.1.1
@@ -917,7 +971,7 @@ Screens:
             SelectMultiple: =true
             DefaultSelectedItems: =If(IsBlank(varEditIndex); Table(); varEditIndex.AmbienteEspecial)
             X: =460
-            Y: =84
+            Y: =124
             Width: =400
       - txtOtroAmbiente:
           Control: ModernTextInput@1.1.1
@@ -926,7 +980,7 @@ Screens:
             Placeholder: ="Especifica el ambiente especial"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.OtroAmbienteEspecial)
             X: =40
-            Y: =140
+            Y: =180
             Width: =400
       - ddGradoIP:
           Control: ModernDropdown@1.0.2
@@ -940,7 +994,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); {Value: varEditIndex.GradoIP})
             X: =460
-            Y: =140
+            Y: =180
             Width: =200
       - ddGradoIK:
           Control: ModernDropdown@1.0.2
@@ -951,7 +1005,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); {Value: varEditIndex.GradoIK})
             X: =676
-            Y: =140
+            Y: =180
             Width: =184
       - ddTipoMontaje:
           Control: ModernDropdown@1.0.2
@@ -961,7 +1015,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoMontaje; Value = varEditIndex.TipoMontaje))
             X: =40
-            Y: =196
+            Y: =236
             Width: =400
       - ddRestricciones:
           Control: ModernDropdown@1.0.2
@@ -971,7 +1025,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); LookUp(colOpcSiNo; Value = false); LookUp(colOpcSiNo; Value = varEditIndex.RestriccionesDimension))
             X: =460
-            Y: =196
+            Y: =236
             Width: =300
       - numAltoMax:
           Control: ModernNumberInput@1.1.1
@@ -982,7 +1036,7 @@ Screens:
             Min: =0
             Precision: =DecimalPrecision.'0'
             X: =40
-            Y: =252
+            Y: =292
             Width: =200
       - numAnchoMax:
           Control: ModernNumberInput@1.1.1
@@ -993,7 +1047,7 @@ Screens:
             Min: =0
             Precision: =DecimalPrecision.'0'
             X: =256
-            Y: =252
+            Y: =292
             Width: =200
       - numFondoMax:
           Control: ModernNumberInput@1.1.1
@@ -1004,7 +1058,7 @@ Screens:
             Min: =0
             Precision: =DecimalPrecision.'0'
             X: =472
-            Y: =252
+            Y: =292
             Width: =200
       - txtCondicionesInstalacion:
           Control: ModernTextInput@1.1.1
@@ -1013,7 +1067,7 @@ Screens:
             Placeholder: ="Condiciones adicionales de instalación"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.CondicionesInstalacion)
             X: =40
-            Y: =308
+            Y: =348
             Width: =820
             Height: =72
       - lblPendientes:
@@ -1113,29 +1167,33 @@ Screens:
 
   scrTableroForm2b:
     Children:
+      - navPestanas:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Default: ="Tableros"
+            Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
+            X: =0
+            Y: =0
+            Width: =Parent.Width
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="3. Eléctrico"
             Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
             X: =0
-            Y: =0
+            Y: =40
             Width: =Parent.Width
-            OnChange: |
-              Switch(Self.Selected.Value;
-                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
-                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
-                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
-                Navigate(scrTableroForm3; ScreenTransition.None)
-              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 3 de 4: Parámetros eléctricos"
             X: =40
-            Y: =56
+            Y: =96
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -1147,7 +1205,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTension; Value = varEditIndex.TensionSuministro))
             X: =40
-            Y: =84
+            Y: =124
             Width: =300
       - numOtraTension:
           Control: ModernNumberInput@1.1.1
@@ -1157,7 +1215,7 @@ Screens:
             Default: =If(IsBlank(varEditIndex); 0; varEditIndex.OtraTension)
             Min: =0
             X: =356
-            Y: =84
+            Y: =124
             Width: =200
       - ddSistema:
           Control: ModernDropdown@1.0.2
@@ -1167,7 +1225,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcSistema; Value = varEditIndex.SistemaElectrico))
             X: =572
-            Y: =84
+            Y: =124
             Width: =288
       - txtOtroSistema:
           Control: ModernTextInput@1.1.1
@@ -1176,7 +1234,7 @@ Screens:
             Placeholder: ="Especifica el sistema eléctrico"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.OtroSistemaElectrico)
             X: =40
-            Y: =140
+            Y: =180
             Width: =400
       - numPotencia:
           Control: ModernNumberInput@1.1.1
@@ -1186,7 +1244,7 @@ Screens:
             Min: =0
             Precision: =DecimalPrecision.'2'
             X: =460
-            Y: =140
+            Y: =180
             Width: =200
       - ddUnidadPotencia:
           Control: ModernDropdown@1.0.2
@@ -1196,7 +1254,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); LookUp(colOpcUnidadPotencia; Value="kW"); LookUp(colOpcUnidadPotencia; Value = varEditIndex.UnidadPotencia))
             X: =676
-            Y: =140
+            Y: =180
             Width: =184
       - lblCorriente:
           Control: ModernText@1.0.0
@@ -1219,7 +1277,7 @@ Screens:
                 )
               )
             X: =40
-            Y: =196
+            Y: =236
             Width: =400
       - ddFrecuencia:
           Control: ModernDropdown@1.0.2
@@ -1229,7 +1287,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcFrecuencia; Value = varEditIndex.Frecuencia))
             X: =460
-            Y: =196
+            Y: =236
             Width: =200
       - numOtraFrecuencia:
           Control: ModernNumberInput@1.1.1
@@ -1239,7 +1297,7 @@ Screens:
             Default: =If(IsBlank(varEditIndex); 0; varEditIndex.OtraFrecuencia)
             Min: =0
             X: =676
-            Y: =196
+            Y: =236
             Width: =184
       - cmbProteccionesRequeridas:
           Control: ModernCombobox@1.1.1
@@ -1249,7 +1307,7 @@ Screens:
             SelectMultiple: =true
             DefaultSelectedItems: =If(IsBlank(varEditIndex); Table(); varEditIndex.ProteccionesRequeridas)
             X: =40
-            Y: =252
+            Y: =292
             Width: =400
       - cmbMarcasPreferidas:
           Control: ModernCombobox@1.1.1
@@ -1259,7 +1317,7 @@ Screens:
             SelectMultiple: =true
             DefaultSelectedItems: =If(IsBlank(varEditIndex); Table(); varEditIndex.MarcasPreferidas)
             X: =460
-            Y: =252
+            Y: =292
             Width: =400
       - lblPendientes:
           Control: ModernText@1.0.0
@@ -1358,29 +1416,33 @@ Screens:
 
   scrTableroForm3:
     Children:
+      - navPestanas:
+          Control: ModernTabList@1.0.0
+          Properties:
+            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Default: ="Tableros"
+            Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
+            X: =0
+            Y: =0
+            Width: =Parent.Width
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="4. Constructivo"
             Appearance: =TabListAppearance.Underline
+            DisplayMode: =DisplayMode.View
             X: =0
-            Y: =0
+            Y: =40
             Width: =Parent.Width
-            OnChange: |
-              Switch(Self.Selected.Value;
-                "1. Identificación";      Navigate(scrTableroForm; ScreenTransition.None);
-                "2. Ubicación y montaje"; Navigate(scrTableroForm2a; ScreenTransition.None);
-                "3. Eléctrico";           Navigate(scrTableroForm2b; ScreenTransition.None);
-                Navigate(scrTableroForm3; ScreenTransition.None)
-              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
             Text: |
               (If(IsBlank(varEditIndex); "Nuevo tablero"; "Editando: " & varEditIndex.Nombre)) & " — Paso 4 de 4: Diseño constructivo"
             X: =40
-            Y: =56
+            Y: =96
             Width: =Parent.Width - 80
             Size: =16
             FontWeight: =FontWeight.Semibold
@@ -1392,7 +1454,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcMaterialGabinete; Value = varEditIndex.MaterialGabinete))
             X: =40
-            Y: =84
+            Y: =124
             Width: =400
       - ddColorGabinete:
           Control: ModernDropdown@1.0.2
@@ -1402,7 +1464,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); LookUp(colOpcColorGabinete; Value="7035"); LookUp(colOpcColorGabinete; Value = varEditIndex.ColorGabinete))
             X: =460
-            Y: =84
+            Y: =124
             Width: =400
       - ddTipoVentilacion:
           Control: ModernDropdown@1.0.2
@@ -1412,7 +1474,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcTipoVentilacion; Value = varEditIndex.TipoVentilacion))
             X: =40
-            Y: =140
+            Y: =180
             Width: =400
       - ddExpansionFutura:
           Control: ModernDropdown@1.0.2
@@ -1422,7 +1484,7 @@ Screens:
             Default: |
               If(IsBlank(varEditIndex); Blank(); LookUp(colOpcExpansionFutura; Value = varEditIndex.ExpansionFutura))
             X: =460
-            Y: =140
+            Y: =180
             Width: =400
       - txtObservacionesTablero:
           Control: ModernTextInput@1.1.1
@@ -1431,7 +1493,7 @@ Screens:
             Placeholder: ="Observaciones del tablero"
             Default: =If(IsBlank(varEditIndex); ""; varEditIndex.ObservacionesTablero)
             X: =40
-            Y: =196
+            Y: =236
             Width: =820
             Height: =72
       - lblPendientes:
@@ -1538,6 +1600,7 @@ Screens:
                     registro: {
                       Nombre: txtNombreTablero.Text;
                       Cantidad: numCantidad.Value;
+                      TableroId: If(IsBlank(varEditIndex); varNextTableroId; varEditIndex.TableroId);
                       Orden: If(IsBlank(varEditIndex); CountRows(colTableros); varEditIndex.Orden);
                       TipoEntrega: ddTipoEntrega.Selected.Value;
                       InstalacionNuevaReemplazo: ddInstalacionNuevaReemplazo.Selected.Value;
@@ -1577,8 +1640,8 @@ Screens:
                   };
                   If(
                     IsBlank(varEditIndex);
-                    Collect(colTableros; registro);
-                    Patch(colTableros; varEditIndex; registro)
+                    Collect(colTableros; registro);; Set(varNextTableroId; varNextTableroId + 1);
+                    UpdateIf(colTableros; TableroId = varEditIndex.TableroId; registro)
                   )
                 );;
                 Set(varEditIndex; Blank());;
@@ -1609,10 +1672,22 @@ Screens:
             Y: =0
             Width: =Parent.Width
             OnChange: |
-              Switch(Self.Selected.Value;
+              Switch(
+                Self.Selected.Value;
                 "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-                "Tableros";            Navigate(scrTableros; ScreenTransition.None);
-                Navigate(scrDocumentacion; ScreenTransition.None)
+                "Tableros";
+                  If(
+                    varPasoMaximo >= 2;
+                    Navigate(scrTableros; ScreenTransition.None);
+                    Notify("Completa Contacto y Proyecto antes de continuar."; NotificationType.Warning);;
+                    Reset(navPestanas)
+                  );
+                If(
+                  varPasoMaximo >= 3;
+                  Navigate(scrDocumentacion; ScreenTransition.None);
+                  Notify("Agrega al menos un tablero antes de continuar."; NotificationType.Warning);;
+                  Reset(navPestanas)
+                )
               )
       - txtObservacionesProyecto:
           Control: ModernTextInput@1.1.1
@@ -1641,9 +1716,9 @@ Screens:
                     CentroCosto: txtCentroCosto.Text;
                     FechaEntregaDeseada: dtpEntrega.SelectedDate;
                     IngenieriaPor: Switch(ddIngenieriaPor.Selected.Value;
-                      "csenergy"; 'Ingeniería por (Solicitudes)'.CSEnergy;
-                      "cliente";  'Ingeniería por (Solicitudes)'.Cliente;
-                      'Ingeniería por (Solicitudes)'.Conjunta
+                      "csenergy"; 'IngenieriaPor (Solicitudes)'.CSEnergy;
+                      "cliente";  'IngenieriaPor (Solicitudes)'.Cliente;
+                      'IngenieriaPor (Solicitudes)'.Conjunta
                     );
                     ContactoNombre: txtContactoNombre.Text;
                     ContactoEmail: txtContactoEmail.Text;
@@ -1659,72 +1734,72 @@ Screens:
                     Cantidad: t.Cantidad;
                     Orden: t.Orden;
                     TipoEntrega: Switch(t.TipoEntrega;
-                      "tablero";  'Tipo de Entrega (SolicitudTableros)'.'Tablero Eléctrico';
-                      "sala";     'Tipo de Entrega (SolicitudTableros)'.'Sala Eléctrica';
-                      'Tipo de Entrega (SolicitudTableros)'.'Producto Eléctrico'
+                      "tablero";  'TipoEntrega (SolicitudTableros)'.'Tablero Eléctrico';
+                      "sala";     'TipoEntrega (SolicitudTableros)'.'Sala Eléctrica';
+                      'TipoEntrega (SolicitudTableros)'.'Producto Eléctrico'
                     );
                     InstalacionNuevaReemplazo: Switch(t.InstalacionNuevaReemplazo;
-                      "nueva";     'Instalación Nueva o Reemplazo (SolicitudTableros)'.'Instalación nueva';
-                      'Instalación Nueva o Reemplazo (SolicitudTableros)'.'Reemplazo de existente'
+                      "nueva";     'InstalacionNuevaReemplazo (SolicitudTableros)'.'Instalación nueva';
+                      'InstalacionNuevaReemplazo (SolicitudTableros)'.'Reemplazo de existente'
                     );
                     TipoTablero: Switch(t.TipoTablero;
-                      "fuerza";         'Tipo de Tablero (SolicitudTableros)'.'Fuerza/Potencia';
-                      "alumbrado";      'Tipo de Tablero (SolicitudTableros)'.'Alumbrado/Distribución BT';
-                      "control";        'Tipo de Tablero (SolicitudTableros)'.'Control/Automatización';
-                      "transfer";       'Tipo de Tablero (SolicitudTableros)'.'Transferencia (ATS/MTS)';
-                      "sincronizacion"; 'Tipo de Tablero (SolicitudTableros)'.'Sincronización de Generadores';
-                      "remoto";         'Tipo de Tablero (SolicitudTableros)'.'Distribución Remoto';
-                      "pfcs";           'Tipo de Tablero (SolicitudTableros)'.'Factor de Potencia';
-                      "medicion";       'Tipo de Tablero (SolicitudTableros)'.'Medición/Centro de Carga';
-                      "variadores";     'Tipo de Tablero (SolicitudTableros)'.'Variadores de Frecuencia';
-                      "arrancadores";   'Tipo de Tablero (SolicitudTableros)'.'Arrancadores Suaves';
-                      "ups";            'Tipo de Tablero (SolicitudTableros)'.'UPS/Respaldo';
-                      'Tipo de Tablero (SolicitudTableros)'.Otro
+                      "fuerza";         'TipoTablero (SolicitudTableros)'.'Fuerza/Potencia';
+                      "alumbrado";      'TipoTablero (SolicitudTableros)'.'Alumbrado/Distribución BT';
+                      "control";        'TipoTablero (SolicitudTableros)'.'Control/Automatización';
+                      "transfer";       'TipoTablero (SolicitudTableros)'.'Transferencia (ATS/MTS)';
+                      "sincronizacion"; 'TipoTablero (SolicitudTableros)'.'Sincronización de Generadores';
+                      "remoto";         'TipoTablero (SolicitudTableros)'.'Distribución Remoto';
+                      "pfcs";           'TipoTablero (SolicitudTableros)'.'Factor de Potencia';
+                      "medicion";       'TipoTablero (SolicitudTableros)'.'Medición/Centro de Carga';
+                      "variadores";     'TipoTablero (SolicitudTableros)'.'Variadores de Frecuencia';
+                      "arrancadores";   'TipoTablero (SolicitudTableros)'.'Arrancadores Suaves';
+                      "ups";            'TipoTablero (SolicitudTableros)'.'UPS/Respaldo';
+                      'TipoTablero (SolicitudTableros)'.Otro
                     );
                     OtroTipoTablero: t.OtroTipoTablero;
                     FuncionTablero: t.FuncionTablero;
                     CargasAAlimentar: t.CargasAAlimentar;
                     NumeroCircuitos: t.NumeroCircuitos;
                     Ubicacion: Switch(t.Ubicacion;
-                      "interior"; 'Ubicación (SolicitudTableros)'.Interior;
-                      'Ubicación (SolicitudTableros)'.Exterior
+                      "interior"; 'Ubicacion (SolicitudTableros)'.Interior;
+                      'Ubicacion (SolicitudTableros)'.Exterior
                     );
                     AmbienteEspecial: ForAll(t.AmbienteEspecial As sel;
                       Switch(sel.Value;
-                        "marino";      'Ambiente Especial (SolicitudTableros)'.'Ambiente marino';
-                        "minero";      'Ambiente Especial (SolicitudTableros)'.'Ambiente minero';
-                        "humedo";      'Ambiente Especial (SolicitudTableros)'.'Húmedo';
-                        "corrosivo";   'Ambiente Especial (SolicitudTableros)'.Corrosivo;
-                        "polvoriento"; 'Ambiente Especial (SolicitudTableros)'.Polvoriento;
-                        "explosivo";   'Ambiente Especial (SolicitudTableros)'.'Atmósfera explosiva';
-                        'Ambiente Especial (SolicitudTableros)'.Otro
+                        "marino";      'AmbienteEspecial (SolicitudTableros)'.'Ambiente marino';
+                        "minero";      'AmbienteEspecial (SolicitudTableros)'.'Ambiente minero';
+                        "humedo";      'AmbienteEspecial (SolicitudTableros)'.'Húmedo';
+                        "corrosivo";   'AmbienteEspecial (SolicitudTableros)'.Corrosivo;
+                        "polvoriento"; 'AmbienteEspecial (SolicitudTableros)'.Polvoriento;
+                        "explosivo";   'AmbienteEspecial (SolicitudTableros)'.'Atmósfera explosiva';
+                        'AmbienteEspecial (SolicitudTableros)'.Otro
                       )
                     );
                     OtroAmbienteEspecial: t.OtroAmbienteEspecial;
                     GradoIP: Switch(t.GradoIP;
-                      "IP20"; 'Grado IP (SolicitudTableros)'.IP20;
-                      "IP31"; 'Grado IP (SolicitudTableros)'.IP31;
-                      "IP43"; 'Grado IP (SolicitudTableros)'.IP43;
-                      "IP54"; 'Grado IP (SolicitudTableros)'.IP54;
-                      "IP55"; 'Grado IP (SolicitudTableros)'.IP55;
-                      "IP65"; 'Grado IP (SolicitudTableros)'.IP65;
-                      "IP66"; 'Grado IP (SolicitudTableros)'.IP66;
-                      "IP67"; 'Grado IP (SolicitudTableros)'.IP67;
-                      'Grado IP (SolicitudTableros)'.IP68
+                      "IP20"; 'GradoIP (SolicitudTableros)'.IP20;
+                      "IP31"; 'GradoIP (SolicitudTableros)'.IP31;
+                      "IP43"; 'GradoIP (SolicitudTableros)'.IP43;
+                      "IP54"; 'GradoIP (SolicitudTableros)'.IP54;
+                      "IP55"; 'GradoIP (SolicitudTableros)'.IP55;
+                      "IP65"; 'GradoIP (SolicitudTableros)'.IP65;
+                      "IP66"; 'GradoIP (SolicitudTableros)'.IP66;
+                      "IP67"; 'GradoIP (SolicitudTableros)'.IP67;
+                      'GradoIP (SolicitudTableros)'.IP68
                     );
                     GradoIK: Switch(t.GradoIK;
-                      "IK06"; 'Grado IK (SolicitudTableros)'.IK06;
-                      "IK07"; 'Grado IK (SolicitudTableros)'.IK07;
-                      "IK08"; 'Grado IK (SolicitudTableros)'.IK08;
-                      "IK09"; 'Grado IK (SolicitudTableros)'.IK09;
-                      'Grado IK (SolicitudTableros)'.IK10
+                      "IK06"; 'GradoIK (SolicitudTableros)'.IK06;
+                      "IK07"; 'GradoIK (SolicitudTableros)'.IK07;
+                      "IK08"; 'GradoIK (SolicitudTableros)'.IK08;
+                      "IK09"; 'GradoIK (SolicitudTableros)'.IK09;
+                      'GradoIK (SolicitudTableros)'.IK10
                     );
                     TipoMontaje: Switch(t.TipoMontaje;
-                      "autosoportado"; 'Tipo de Montaje (SolicitudTableros)'.Autosoportado;
-                      "mural";         'Tipo de Montaje (SolicitudTableros)'.Mural;
-                      "rack_19";       'Tipo de Montaje (SolicitudTableros)'.'Rack 19';
-                      "pedestal";      'Tipo de Montaje (SolicitudTableros)'.Pedestal;
-                      'Tipo de Montaje (SolicitudTableros)'.Otro
+                      "autosoportado"; 'TipoMontaje (SolicitudTableros)'.Autosoportado;
+                      "mural";         'TipoMontaje (SolicitudTableros)'.Mural;
+                      "rack_19";       'TipoMontaje (SolicitudTableros)'.'Rack 19';
+                      "pedestal";      'TipoMontaje (SolicitudTableros)'.Pedestal;
+                      'TipoMontaje (SolicitudTableros)'.Otro
                     );
                     RestriccionesDimension: t.RestriccionesDimension;
                     AltoMaxMm: t.AltoMaxMm;
@@ -1732,27 +1807,27 @@ Screens:
                     FondoMaxMm: t.FondoMaxMm;
                     CondicionesInstalacion: t.CondicionesInstalacion;
                     TensionSuministro: Switch(t.TensionSuministro;
-                      "220";  'Tensión de Suministro (SolicitudTableros)'.'220 V';
-                      "380";  'Tensión de Suministro (SolicitudTableros)'.'380 V';
-                      "400";  'Tensión de Suministro (SolicitudTableros)'.'400 V';
-                      "440";  'Tensión de Suministro (SolicitudTableros)'.'440 V';
-                      "480";  'Tensión de Suministro (SolicitudTableros)'.'480 V';
-                      "690";  'Tensión de Suministro (SolicitudTableros)'.'690 V';
-                      "1000"; 'Tensión de Suministro (SolicitudTableros)'.'1000 V';
-                      'Tensión de Suministro (SolicitudTableros)'.Otro
+                      "220";  'TensionSuministro (SolicitudTableros)'.'220 V';
+                      "380";  'TensionSuministro (SolicitudTableros)'.'380 V';
+                      "400";  'TensionSuministro (SolicitudTableros)'.'400 V';
+                      "440";  'TensionSuministro (SolicitudTableros)'.'440 V';
+                      "480";  'TensionSuministro (SolicitudTableros)'.'480 V';
+                      "690";  'TensionSuministro (SolicitudTableros)'.'690 V';
+                      "1000"; 'TensionSuministro (SolicitudTableros)'.'1000 V';
+                      'TensionSuministro (SolicitudTableros)'.Otro
                     );
                     OtraTension: t.OtraTension;
                     SistemaElectrico: Switch(t.SistemaElectrico;
-                      "trifasico";  'Sistema Eléctrico (SolicitudTableros)'.'Trifásico';
-                      "monofasico"; 'Sistema Eléctrico (SolicitudTableros)'.'Monofásico';
-                      "dc";         'Sistema Eléctrico (SolicitudTableros)'.'Corriente continua (DC)';
-                      'Sistema Eléctrico (SolicitudTableros)'.Otro
+                      "trifasico";  'SistemaElectrico (SolicitudTableros)'.'Trifásico';
+                      "monofasico"; 'SistemaElectrico (SolicitudTableros)'.'Monofásico';
+                      "dc";         'SistemaElectrico (SolicitudTableros)'.'Corriente continua (DC)';
+                      'SistemaElectrico (SolicitudTableros)'.Otro
                     );
                     OtroSistemaElectrico: t.OtroSistemaElectrico;
                     PotenciaEstimada: t.PotenciaEstimada;
                     UnidadPotencia: Switch(t.UnidadPotencia;
-                      "kW";  'Unidad de Potencia (SolicitudTableros)'.kW;
-                      'Unidad de Potencia (SolicitudTableros)'.kVA
+                      "kW";  'UnidadPotencia (SolicitudTableros)'.kW;
+                      'UnidadPotencia (SolicitudTableros)'.kVA
                     );
                     CorrienteNominal: t.CorrienteNominal;
                     Frecuencia: Switch(t.Frecuencia;
@@ -1763,61 +1838,61 @@ Screens:
                     OtraFrecuencia: t.OtraFrecuencia;
                     ProteccionesRequeridas: ForAll(t.ProteccionesRequeridas As sel;
                       Switch(sel.Value;
-                        "interruptor_automatico"; 'Protecciones Requeridas (SolicitudTableros)'.'Interruptor automático';
-                        "diferencial";            'Protecciones Requeridas (SolicitudTableros)'.Diferencial;
-                        "fusible";                'Protecciones Requeridas (SolicitudTableros)'.Fusible;
-                        "relevo_sobrecarga";       'Protecciones Requeridas (SolicitudTableros)'.'Relevo de sobrecarga';
-                        "relevo_falla_tierra";     'Protecciones Requeridas (SolicitudTableros)'.'Relevo de falla a tierra';
-                        "proteccion_tension";      'Protecciones Requeridas (SolicitudTableros)'.'Protección de tensión';
-                        "proteccion_corriente";    'Protecciones Requeridas (SolicitudTableros)'.'Protección de corriente';
-                        "descargador_tension";     'Protecciones Requeridas (SolicitudTableros)'.'Descargador de tensión';
-                        'Protecciones Requeridas (SolicitudTableros)'.Otro
+                        "interruptor_automatico"; 'ProteccionesRequeridas (SolicitudTableros)'.'Interruptor automático';
+                        "diferencial";            'ProteccionesRequeridas (SolicitudTableros)'.Diferencial;
+                        "fusible";                'ProteccionesRequeridas (SolicitudTableros)'.Fusible;
+                        "relevo_sobrecarga";       'ProteccionesRequeridas (SolicitudTableros)'.'Relevo de sobrecarga';
+                        "relevo_falla_tierra";     'ProteccionesRequeridas (SolicitudTableros)'.'Relevo de falla a tierra';
+                        "proteccion_tension";      'ProteccionesRequeridas (SolicitudTableros)'.'Protección de tensión';
+                        "proteccion_corriente";    'ProteccionesRequeridas (SolicitudTableros)'.'Protección de corriente';
+                        "descargador_tension";     'ProteccionesRequeridas (SolicitudTableros)'.'Descargador de tensión';
+                        'ProteccionesRequeridas (SolicitudTableros)'.Otro
                       )
                     );
                     MarcasPreferidas: ForAll(t.MarcasPreferidas As sel;
                       Switch(sel.Value;
-                        "schneider";   'Marcas Preferidas (SolicitudTableros)'.'Schneider Electric';
-                        "siemens";     'Marcas Preferidas (SolicitudTableros)'.Siemens;
-                        "abb";         'Marcas Preferidas (SolicitudTableros)'.ABB;
-                        "legrand";     'Marcas Preferidas (SolicitudTableros)'.Legrand;
-                        "eaton";       'Marcas Preferidas (SolicitudTableros)'.Eaton;
-                        "chint";       'Marcas Preferidas (SolicitudTableros)'.Chint;
-                        "hager";       'Marcas Preferidas (SolicitudTableros)'.Hager;
-                        "weidmuller";  'Marcas Preferidas (SolicitudTableros)'.'Weidmüller';
-                        "phoenix";     'Marcas Preferidas (SolicitudTableros)'.'Phoenix Contact';
-                        'Marcas Preferidas (SolicitudTableros)'.Otro
+                        "schneider";   'MarcasPreferidas (SolicitudTableros)'.'Schneider Electric';
+                        "siemens";     'MarcasPreferidas (SolicitudTableros)'.Siemens;
+                        "abb";         'MarcasPreferidas (SolicitudTableros)'.ABB;
+                        "legrand";     'MarcasPreferidas (SolicitudTableros)'.Legrand;
+                        "eaton";       'MarcasPreferidas (SolicitudTableros)'.Eaton;
+                        "chint";       'MarcasPreferidas (SolicitudTableros)'.Chint;
+                        "hager";       'MarcasPreferidas (SolicitudTableros)'.Hager;
+                        "weidmuller";  'MarcasPreferidas (SolicitudTableros)'.'Weidmüller';
+                        "phoenix";     'MarcasPreferidas (SolicitudTableros)'.'Phoenix Contact';
+                        'MarcasPreferidas (SolicitudTableros)'.Otro
                       )
                     );
                     MaterialGabinete: Switch(t.MaterialGabinete;
-                      "acero_pintado";     'Material de Gabinete (SolicitudTableros)'.'Acero pintado';
-                      "acero_galvanizado"; 'Material de Gabinete (SolicitudTableros)'.'Acero galvanizado';
-                      "acero_inoxidable";  'Material de Gabinete (SolicitudTableros)'.'Acero inoxidable';
-                      "acero_inox_316";    'Material de Gabinete (SolicitudTableros)'.'Acero inoxidable 316';
-                      "fibra_vidrio";      'Material de Gabinete (SolicitudTableros)'.'Fibra de vidrio';
-                      "poliester";         'Material de Gabinete (SolicitudTableros)'.'Poliéster';
-                      'Material de Gabinete (SolicitudTableros)'.Aluminio
+                      "acero_pintado";     'MaterialGabinete (SolicitudTableros)'.'Acero pintado';
+                      "acero_galvanizado"; 'MaterialGabinete (SolicitudTableros)'.'Acero galvanizado';
+                      "acero_inoxidable";  'MaterialGabinete (SolicitudTableros)'.'Acero inoxidable';
+                      "acero_inox_316";    'MaterialGabinete (SolicitudTableros)'.'Acero inoxidable 316';
+                      "fibra_vidrio";      'MaterialGabinete (SolicitudTableros)'.'Fibra de vidrio';
+                      "poliester";         'MaterialGabinete (SolicitudTableros)'.'Poliéster';
+                      'MaterialGabinete (SolicitudTableros)'.Aluminio
                     );
                     ColorGabinete: Switch(t.ColorGabinete;
-                      "7035"; 'Color de Gabinete (SolicitudTableros)'.'RAL 7035 (gris claro)';
-                      "7016"; 'Color de Gabinete (SolicitudTableros)'.'RAL 7016 (gris antracita)';
-                      "9016"; 'Color de Gabinete (SolicitudTableros)'.'RAL 9016 (blanco tráfico)';
-                      "9005"; 'Color de Gabinete (SolicitudTableros)'.'RAL 9005 (negro)';
-                      "5010"; 'Color de Gabinete (SolicitudTableros)'.'RAL 5010 (azul)';
-                      "6005"; 'Color de Gabinete (SolicitudTableros)'.'RAL 6005 (verde)';
-                      'Color de Gabinete (SolicitudTableros)'.Otro
+                      "7035"; 'ColorGabinete (SolicitudTableros)'.'RAL 7035 (gris claro)';
+                      "7016"; 'ColorGabinete (SolicitudTableros)'.'RAL 7016 (gris antracita)';
+                      "9016"; 'ColorGabinete (SolicitudTableros)'.'RAL 9016 (blanco tráfico)';
+                      "9005"; 'ColorGabinete (SolicitudTableros)'.'RAL 9005 (negro)';
+                      "5010"; 'ColorGabinete (SolicitudTableros)'.'RAL 5010 (azul)';
+                      "6005"; 'ColorGabinete (SolicitudTableros)'.'RAL 6005 (verde)';
+                      'ColorGabinete (SolicitudTableros)'.Otro
                     );
                     TipoVentilacion: Switch(t.TipoVentilacion;
-                      "natural";     'Tipo de Ventilación (SolicitudTableros)'.Natural;
-                      "forzada";     'Tipo de Ventilación (SolicitudTableros)'.'Forzada (ventilador)';
-                      "sellado";     'Tipo de Ventilación (SolicitudTableros)'.'Sellado (IP alto)';
-                      'Tipo de Ventilación (SolicitudTableros)'.'Climatizado (aire acondicionado)'
+                      "natural";     'TipoVentilacion (SolicitudTableros)'.Natural;
+                      "forzada";     'TipoVentilacion (SolicitudTableros)'.'Forzada (ventilador)';
+                      "sellado";     'TipoVentilacion (SolicitudTableros)'.'Sellado (IP alto)';
+                      'TipoVentilacion (SolicitudTableros)'.'Climatizado (aire acondicionado)'
                     );
                     ExpansionFutura: Switch(t.ExpansionFutura;
-                      "no";  'Expansión Futura (SolicitudTableros)'.'Sin expansión';
-                      "10";  'Expansión Futura (SolicitudTableros)'.'10%';
-                      "20";  'Expansión Futura (SolicitudTableros)'.'20%';
-                      "30";  'Expansión Futura (SolicitudTableros)'.'30%';
-                      'Expansión Futura (SolicitudTableros)'.Otro
+                      "no";  'ExpansionFutura (SolicitudTableros)'.'Sin expansión';
+                      "10";  'ExpansionFutura (SolicitudTableros)'.'10%';
+                      "20";  'ExpansionFutura (SolicitudTableros)'.'20%';
+                      "30";  'ExpansionFutura (SolicitudTableros)'.'30%';
+                      'ExpansionFutura (SolicitudTableros)'.Otro
                     );
                     ObservacionesTablero: t.ObservacionesTablero
                   })
@@ -1867,3 +1942,17 @@ Screens:
 - Si el pegado masivo falla en algún punto puntual, no reinicies desde cero:
   identifica cuál control falló y créalo a mano — el resto del pegado ya
   construido queda intacto.
+- **Por qué existe `TableroId`:** `AmbienteEspecial`, `ProteccionesRequeridas`
+  y `MarcasPreferidas` son columnas de tipo **tabla anidada** dentro de cada
+  fila de `colTableros` (vienen de un `ModernCombobox` multiselección). Power
+  Fx **no puede comparar dos registros con `=`** ni hacer `Remove`/`Patch`
+  **por registro completo** cuando el registro contiene una columna de tipo
+  tabla — da error de tipo o "no se pueden comparar estos tipos: Record,
+  Record". Por eso cada fila lleva un campo `TableroId` (Number, asignado con
+  el contador `varNextTableroId` que nunca se reutiliza, ni siquiera tras un
+  Eliminar) y todas las operaciones que necesitan identificar "esta fila
+  puntual" (resaltado de selección, Eliminar, Guardar en modo edición) se
+  hacen comparando `TableroId` (un Number, sí comparable) en vez del registro
+  entero — con `RemoveIf`/`UpdateIf` en lugar de `Remove`/`Patch` por
+  registro. Si en el futuro agregas otra columna de tabla anidada al tablero,
+  recuerda este mismo patrón.
