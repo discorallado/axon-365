@@ -63,6 +63,17 @@ Este YAML no se pega directo en cualquier vista del estudio. Cuatro vías:
   también: `'Columna (Tabla)'.'Etiqueta exacta'` — funciona igual y evita
   adivinar cómo Dataverse sanea el texto. Este documento usa esa forma citada
   en todas las columnas nuevas para no depender de esa sanitización.
+- **`'Columna (Tabla)'` debe ser el nombre para mostrar EXACTO de la
+  columna** (no el nombre lógico interno con prefijo de publisher, ej.
+  `csesi_TipoTablero`, sino el que ves en la lista de columnas de la tabla en
+  `make.powerapps.com`). Si al crear las columnas Choice les pusiste el mismo
+  identificador corto que el nombre lógico (`TipoTablero`, `GradoIP`,
+  `ExpansionFutura`, sin espacios ni tildes) — que es lo más común si las
+  creaste rápido tecleando el nombre — la referencia debe ser
+  `'TipoTablero (SolicitudTableros)'`, **no** `'Tipo de Tablero
+  (SolicitudTableros)'`. Un desajuste aquí da `El nombre no es válido. No se
+  reconoce "..."`. Verifica el nombre real en Studio antes de asumir la
+  versión "legible" con espacios.
 - **Notación Power Fx:** separador decimal `,` en el entorno → argumentos de
   función con `;`, encadenado de instrucciones con `;;`.
 - Las tablas, columnas y Choices de `SolicitudTablero` deben existir ya
@@ -805,9 +816,9 @@ no sobre los controles directamente.
                     CentroCosto: txtCentroCosto.Text;
                     FechaEntregaDeseada: dtpEntrega.SelectedDate;
                     IngenieriaPor: Switch(ddIngenieriaPor.Selected.Value;
-                      "csenergy"; 'Ingeniería por (Solicitudes)'.CSEnergy;
-                      "cliente";  'Ingeniería por (Solicitudes)'.Cliente;
-                      'Ingeniería por (Solicitudes)'.Conjunta
+                      "csenergy"; 'IngenieriaPor (Solicitudes)'.CSEnergy;
+                      "cliente";  'IngenieriaPor (Solicitudes)'.Cliente;
+                      'IngenieriaPor (Solicitudes)'.Conjunta
                     );
                     ContactoNombre: txtContactoNombre.Text;
                     ContactoEmail: txtContactoEmail.Text;
@@ -826,27 +837,27 @@ no sobre los controles directamente.
 
                     // --- Identificación ---
                     TipoEntrega: Switch(t.TipoEntrega;
-                      "tablero";  'Tipo de Entrega (SolicitudTableros)'.'Tablero Eléctrico';
-                      "sala";     'Tipo de Entrega (SolicitudTableros)'.'Sala Eléctrica';
-                      'Tipo de Entrega (SolicitudTableros)'.'Producto Eléctrico'
+                      "tablero";  'TipoEntrega (SolicitudTableros)'.'Tablero Eléctrico';
+                      "sala";     'TipoEntrega (SolicitudTableros)'.'Sala Eléctrica';
+                      'TipoEntrega (SolicitudTableros)'.'Producto Eléctrico'
                     );
                     InstalacionNuevaReemplazo: Switch(t.InstalacionNuevaReemplazo;
-                      "nueva";     'Instalación Nueva o Reemplazo (SolicitudTableros)'.'Instalación nueva';
-                      'Instalación Nueva o Reemplazo (SolicitudTableros)'.'Reemplazo de existente'
+                      "nueva";     'InstalacionNuevaReemplazo (SolicitudTableros)'.'Instalación nueva';
+                      'InstalacionNuevaReemplazo (SolicitudTableros)'.'Reemplazo de existente'
                     );
                     TipoTablero: Switch(t.TipoTablero;
-                      "fuerza";         'Tipo de Tablero (SolicitudTableros)'.'Fuerza/Potencia';
-                      "alumbrado";      'Tipo de Tablero (SolicitudTableros)'.'Alumbrado/Distribución BT';
-                      "control";        'Tipo de Tablero (SolicitudTableros)'.'Control/Automatización';
-                      "transfer";       'Tipo de Tablero (SolicitudTableros)'.'Transferencia (ATS/MTS)';
-                      "sincronizacion"; 'Tipo de Tablero (SolicitudTableros)'.'Sincronización de Generadores';
-                      "remoto";         'Tipo de Tablero (SolicitudTableros)'.'Distribución Remoto';
-                      "pfcs";           'Tipo de Tablero (SolicitudTableros)'.'Factor de Potencia';
-                      "medicion";       'Tipo de Tablero (SolicitudTableros)'.'Medición/Centro de Carga';
-                      "variadores";     'Tipo de Tablero (SolicitudTableros)'.'Variadores de Frecuencia';
-                      "arrancadores";   'Tipo de Tablero (SolicitudTableros)'.'Arrancadores Suaves';
-                      "ups";            'Tipo de Tablero (SolicitudTableros)'.'UPS/Respaldo';
-                      'Tipo de Tablero (SolicitudTableros)'.Otro
+                      "fuerza";         'TipoTablero (SolicitudTableros)'.'Fuerza/Potencia';
+                      "alumbrado";      'TipoTablero (SolicitudTableros)'.'Alumbrado/Distribución BT';
+                      "control";        'TipoTablero (SolicitudTableros)'.'Control/Automatización';
+                      "transfer";       'TipoTablero (SolicitudTableros)'.'Transferencia (ATS/MTS)';
+                      "sincronizacion"; 'TipoTablero (SolicitudTableros)'.'Sincronización de Generadores';
+                      "remoto";         'TipoTablero (SolicitudTableros)'.'Distribución Remoto';
+                      "pfcs";           'TipoTablero (SolicitudTableros)'.'Factor de Potencia';
+                      "medicion";       'TipoTablero (SolicitudTableros)'.'Medición/Centro de Carga';
+                      "variadores";     'TipoTablero (SolicitudTableros)'.'Variadores de Frecuencia';
+                      "arrancadores";   'TipoTablero (SolicitudTableros)'.'Arrancadores Suaves';
+                      "ups";            'TipoTablero (SolicitudTableros)'.'UPS/Respaldo';
+                      'TipoTablero (SolicitudTableros)'.Otro
                     );
                     OtroTipoTablero: t.OtroTipoTablero;
                     FuncionTablero: t.FuncionTablero;
@@ -855,47 +866,47 @@ no sobre los controles directamente.
 
                     // --- Ubicación y ambiente ---
                     Ubicacion: Switch(t.Ubicacion;
-                      "interior"; 'Ubicación (SolicitudTableros)'.Interior;
-                      'Ubicación (SolicitudTableros)'.Exterior
+                      "interior"; 'Ubicacion (SolicitudTableros)'.Interior;
+                      'Ubicacion (SolicitudTableros)'.Exterior
                     );
                     AmbienteEspecial: ForAll(t.AmbienteEspecial As sel;
                       Switch(sel.Value;
-                        "marino";      'Ambiente Especial (SolicitudTableros)'.'Ambiente marino';
-                        "minero";      'Ambiente Especial (SolicitudTableros)'.'Ambiente minero';
-                        "humedo";      'Ambiente Especial (SolicitudTableros)'.'Húmedo';
-                        "corrosivo";   'Ambiente Especial (SolicitudTableros)'.Corrosivo;
-                        "polvoriento"; 'Ambiente Especial (SolicitudTableros)'.Polvoriento;
-                        "explosivo";   'Ambiente Especial (SolicitudTableros)'.'Atmósfera explosiva';
-                        'Ambiente Especial (SolicitudTableros)'.Otro
+                        "marino";      'AmbienteEspecial (SolicitudTableros)'.'Ambiente marino';
+                        "minero";      'AmbienteEspecial (SolicitudTableros)'.'Ambiente minero';
+                        "humedo";      'AmbienteEspecial (SolicitudTableros)'.'Húmedo';
+                        "corrosivo";   'AmbienteEspecial (SolicitudTableros)'.Corrosivo;
+                        "polvoriento"; 'AmbienteEspecial (SolicitudTableros)'.Polvoriento;
+                        "explosivo";   'AmbienteEspecial (SolicitudTableros)'.'Atmósfera explosiva';
+                        'AmbienteEspecial (SolicitudTableros)'.Otro
                       )
                     );
                     OtroAmbienteEspecial: t.OtroAmbienteEspecial;
                     GradoIP: Switch(t.GradoIP;
-                      "IP20"; 'Grado IP (SolicitudTableros)'.IP20;
-                      "IP31"; 'Grado IP (SolicitudTableros)'.IP31;
-                      "IP43"; 'Grado IP (SolicitudTableros)'.IP43;
-                      "IP54"; 'Grado IP (SolicitudTableros)'.IP54;
-                      "IP55"; 'Grado IP (SolicitudTableros)'.IP55;
-                      "IP65"; 'Grado IP (SolicitudTableros)'.IP65;
-                      "IP66"; 'Grado IP (SolicitudTableros)'.IP66;
-                      "IP67"; 'Grado IP (SolicitudTableros)'.IP67;
-                      'Grado IP (SolicitudTableros)'.IP68
+                      "IP20"; 'GradoIP (SolicitudTableros)'.IP20;
+                      "IP31"; 'GradoIP (SolicitudTableros)'.IP31;
+                      "IP43"; 'GradoIP (SolicitudTableros)'.IP43;
+                      "IP54"; 'GradoIP (SolicitudTableros)'.IP54;
+                      "IP55"; 'GradoIP (SolicitudTableros)'.IP55;
+                      "IP65"; 'GradoIP (SolicitudTableros)'.IP65;
+                      "IP66"; 'GradoIP (SolicitudTableros)'.IP66;
+                      "IP67"; 'GradoIP (SolicitudTableros)'.IP67;
+                      'GradoIP (SolicitudTableros)'.IP68
                     );
                     GradoIK: Switch(t.GradoIK;
-                      "IK06"; 'Grado IK (SolicitudTableros)'.IK06;
-                      "IK07"; 'Grado IK (SolicitudTableros)'.IK07;
-                      "IK08"; 'Grado IK (SolicitudTableros)'.IK08;
-                      "IK09"; 'Grado IK (SolicitudTableros)'.IK09;
-                      'Grado IK (SolicitudTableros)'.IK10
+                      "IK06"; 'GradoIK (SolicitudTableros)'.IK06;
+                      "IK07"; 'GradoIK (SolicitudTableros)'.IK07;
+                      "IK08"; 'GradoIK (SolicitudTableros)'.IK08;
+                      "IK09"; 'GradoIK (SolicitudTableros)'.IK09;
+                      'GradoIK (SolicitudTableros)'.IK10
                     );
 
                     // --- Montaje y dimensiones ---
                     TipoMontaje: Switch(t.TipoMontaje;
-                      "autosoportado"; 'Tipo de Montaje (SolicitudTableros)'.Autosoportado;
-                      "mural";         'Tipo de Montaje (SolicitudTableros)'.Mural;
-                      "rack_19";       'Tipo de Montaje (SolicitudTableros)'.'Rack 19';
-                      "pedestal";      'Tipo de Montaje (SolicitudTableros)'.Pedestal;
-                      'Tipo de Montaje (SolicitudTableros)'.Otro
+                      "autosoportado"; 'TipoMontaje (SolicitudTableros)'.Autosoportado;
+                      "mural";         'TipoMontaje (SolicitudTableros)'.Mural;
+                      "rack_19";       'TipoMontaje (SolicitudTableros)'.'Rack 19';
+                      "pedestal";      'TipoMontaje (SolicitudTableros)'.Pedestal;
+                      'TipoMontaje (SolicitudTableros)'.Otro
                     );
                     RestriccionesDimension: t.RestriccionesDimension;
                     AltoMaxMm: t.AltoMaxMm;
@@ -905,27 +916,27 @@ no sobre los controles directamente.
 
                     // --- Parámetros eléctricos ---
                     TensionSuministro: Switch(t.TensionSuministro;
-                      "220";  'Tensión de Suministro (SolicitudTableros)'.'220 V';
-                      "380";  'Tensión de Suministro (SolicitudTableros)'.'380 V';
-                      "400";  'Tensión de Suministro (SolicitudTableros)'.'400 V';
-                      "440";  'Tensión de Suministro (SolicitudTableros)'.'440 V';
-                      "480";  'Tensión de Suministro (SolicitudTableros)'.'480 V';
-                      "690";  'Tensión de Suministro (SolicitudTableros)'.'690 V';
-                      "1000"; 'Tensión de Suministro (SolicitudTableros)'.'1000 V';
-                      'Tensión de Suministro (SolicitudTableros)'.Otro
+                      "220";  'TensionSuministro (SolicitudTableros)'.'220 V';
+                      "380";  'TensionSuministro (SolicitudTableros)'.'380 V';
+                      "400";  'TensionSuministro (SolicitudTableros)'.'400 V';
+                      "440";  'TensionSuministro (SolicitudTableros)'.'440 V';
+                      "480";  'TensionSuministro (SolicitudTableros)'.'480 V';
+                      "690";  'TensionSuministro (SolicitudTableros)'.'690 V';
+                      "1000"; 'TensionSuministro (SolicitudTableros)'.'1000 V';
+                      'TensionSuministro (SolicitudTableros)'.Otro
                     );
                     OtraTension: t.OtraTension;
                     SistemaElectrico: Switch(t.SistemaElectrico;
-                      "trifasico";  'Sistema Eléctrico (SolicitudTableros)'.'Trifásico';
-                      "monofasico"; 'Sistema Eléctrico (SolicitudTableros)'.'Monofásico';
-                      "dc";         'Sistema Eléctrico (SolicitudTableros)'.'Corriente continua (DC)';
-                      'Sistema Eléctrico (SolicitudTableros)'.Otro
+                      "trifasico";  'SistemaElectrico (SolicitudTableros)'.'Trifásico';
+                      "monofasico"; 'SistemaElectrico (SolicitudTableros)'.'Monofásico';
+                      "dc";         'SistemaElectrico (SolicitudTableros)'.'Corriente continua (DC)';
+                      'SistemaElectrico (SolicitudTableros)'.Otro
                     );
                     OtroSistemaElectrico: t.OtroSistemaElectrico;
                     PotenciaEstimada: t.PotenciaEstimada;
                     UnidadPotencia: Switch(t.UnidadPotencia;
-                      "kW";  'Unidad de Potencia (SolicitudTableros)'.kW;
-                      'Unidad de Potencia (SolicitudTableros)'.kVA
+                      "kW";  'UnidadPotencia (SolicitudTableros)'.kW;
+                      'UnidadPotencia (SolicitudTableros)'.kVA
                     );
                     CorrienteNominal: t.CorrienteNominal;
                     Frecuencia: Switch(t.Frecuencia;
@@ -936,63 +947,63 @@ no sobre los controles directamente.
                     OtraFrecuencia: t.OtraFrecuencia;
                     ProteccionesRequeridas: ForAll(t.ProteccionesRequeridas As sel;
                       Switch(sel.Value;
-                        "interruptor_automatico"; 'Protecciones Requeridas (SolicitudTableros)'.'Interruptor automático';
-                        "diferencial";            'Protecciones Requeridas (SolicitudTableros)'.Diferencial;
-                        "fusible";                'Protecciones Requeridas (SolicitudTableros)'.Fusible;
-                        "relevo_sobrecarga";       'Protecciones Requeridas (SolicitudTableros)'.'Relevo de sobrecarga';
-                        "relevo_falla_tierra";     'Protecciones Requeridas (SolicitudTableros)'.'Relevo de falla a tierra';
-                        "proteccion_tension";      'Protecciones Requeridas (SolicitudTableros)'.'Protección de tensión';
-                        "proteccion_corriente";    'Protecciones Requeridas (SolicitudTableros)'.'Protección de corriente';
-                        "descargador_tension";     'Protecciones Requeridas (SolicitudTableros)'.'Descargador de tensión';
-                        'Protecciones Requeridas (SolicitudTableros)'.Otro
+                        "interruptor_automatico"; 'ProteccionesRequeridas (SolicitudTableros)'.'Interruptor automático';
+                        "diferencial";            'ProteccionesRequeridas (SolicitudTableros)'.Diferencial;
+                        "fusible";                'ProteccionesRequeridas (SolicitudTableros)'.Fusible;
+                        "relevo_sobrecarga";       'ProteccionesRequeridas (SolicitudTableros)'.'Relevo de sobrecarga';
+                        "relevo_falla_tierra";     'ProteccionesRequeridas (SolicitudTableros)'.'Relevo de falla a tierra';
+                        "proteccion_tension";      'ProteccionesRequeridas (SolicitudTableros)'.'Protección de tensión';
+                        "proteccion_corriente";    'ProteccionesRequeridas (SolicitudTableros)'.'Protección de corriente';
+                        "descargador_tension";     'ProteccionesRequeridas (SolicitudTableros)'.'Descargador de tensión';
+                        'ProteccionesRequeridas (SolicitudTableros)'.Otro
                       )
                     );
                     MarcasPreferidas: ForAll(t.MarcasPreferidas As sel;
                       Switch(sel.Value;
-                        "schneider";   'Marcas Preferidas (SolicitudTableros)'.'Schneider Electric';
-                        "siemens";     'Marcas Preferidas (SolicitudTableros)'.Siemens;
-                        "abb";         'Marcas Preferidas (SolicitudTableros)'.ABB;
-                        "legrand";     'Marcas Preferidas (SolicitudTableros)'.Legrand;
-                        "eaton";       'Marcas Preferidas (SolicitudTableros)'.Eaton;
-                        "chint";       'Marcas Preferidas (SolicitudTableros)'.Chint;
-                        "hager";       'Marcas Preferidas (SolicitudTableros)'.Hager;
-                        "weidmuller";  'Marcas Preferidas (SolicitudTableros)'.'Weidmüller';
-                        "phoenix";     'Marcas Preferidas (SolicitudTableros)'.'Phoenix Contact';
-                        'Marcas Preferidas (SolicitudTableros)'.Otro
+                        "schneider";   'MarcasPreferidas (SolicitudTableros)'.'Schneider Electric';
+                        "siemens";     'MarcasPreferidas (SolicitudTableros)'.Siemens;
+                        "abb";         'MarcasPreferidas (SolicitudTableros)'.ABB;
+                        "legrand";     'MarcasPreferidas (SolicitudTableros)'.Legrand;
+                        "eaton";       'MarcasPreferidas (SolicitudTableros)'.Eaton;
+                        "chint";       'MarcasPreferidas (SolicitudTableros)'.Chint;
+                        "hager";       'MarcasPreferidas (SolicitudTableros)'.Hager;
+                        "weidmuller";  'MarcasPreferidas (SolicitudTableros)'.'Weidmüller';
+                        "phoenix";     'MarcasPreferidas (SolicitudTableros)'.'Phoenix Contact';
+                        'MarcasPreferidas (SolicitudTableros)'.Otro
                       )
                     );
 
                     // --- Diseño constructivo ---
                     MaterialGabinete: Switch(t.MaterialGabinete;
-                      "acero_pintado";     'Material de Gabinete (SolicitudTableros)'.'Acero pintado';
-                      "acero_galvanizado"; 'Material de Gabinete (SolicitudTableros)'.'Acero galvanizado';
-                      "acero_inoxidable";  'Material de Gabinete (SolicitudTableros)'.'Acero inoxidable';
-                      "acero_inox_316";    'Material de Gabinete (SolicitudTableros)'.'Acero inoxidable 316';
-                      "fibra_vidrio";      'Material de Gabinete (SolicitudTableros)'.'Fibra de vidrio';
-                      "poliester";         'Material de Gabinete (SolicitudTableros)'.'Poliéster';
-                      'Material de Gabinete (SolicitudTableros)'.Aluminio
+                      "acero_pintado";     'MaterialGabinete (SolicitudTableros)'.'Acero pintado';
+                      "acero_galvanizado"; 'MaterialGabinete (SolicitudTableros)'.'Acero galvanizado';
+                      "acero_inoxidable";  'MaterialGabinete (SolicitudTableros)'.'Acero inoxidable';
+                      "acero_inox_316";    'MaterialGabinete (SolicitudTableros)'.'Acero inoxidable 316';
+                      "fibra_vidrio";      'MaterialGabinete (SolicitudTableros)'.'Fibra de vidrio';
+                      "poliester";         'MaterialGabinete (SolicitudTableros)'.'Poliéster';
+                      'MaterialGabinete (SolicitudTableros)'.Aluminio
                     );
                     ColorGabinete: Switch(t.ColorGabinete;
-                      "7035"; 'Color de Gabinete (SolicitudTableros)'.'RAL 7035 (gris claro)';
-                      "7016"; 'Color de Gabinete (SolicitudTableros)'.'RAL 7016 (gris antracita)';
-                      "9016"; 'Color de Gabinete (SolicitudTableros)'.'RAL 9016 (blanco tráfico)';
-                      "9005"; 'Color de Gabinete (SolicitudTableros)'.'RAL 9005 (negro)';
-                      "5010"; 'Color de Gabinete (SolicitudTableros)'.'RAL 5010 (azul)';
-                      "6005"; 'Color de Gabinete (SolicitudTableros)'.'RAL 6005 (verde)';
-                      'Color de Gabinete (SolicitudTableros)'.Otro
+                      "7035"; 'ColorGabinete (SolicitudTableros)'.'RAL 7035 (gris claro)';
+                      "7016"; 'ColorGabinete (SolicitudTableros)'.'RAL 7016 (gris antracita)';
+                      "9016"; 'ColorGabinete (SolicitudTableros)'.'RAL 9016 (blanco tráfico)';
+                      "9005"; 'ColorGabinete (SolicitudTableros)'.'RAL 9005 (negro)';
+                      "5010"; 'ColorGabinete (SolicitudTableros)'.'RAL 5010 (azul)';
+                      "6005"; 'ColorGabinete (SolicitudTableros)'.'RAL 6005 (verde)';
+                      'ColorGabinete (SolicitudTableros)'.Otro
                     );
                     TipoVentilacion: Switch(t.TipoVentilacion;
-                      "natural";     'Tipo de Ventilación (SolicitudTableros)'.Natural;
-                      "forzada";     'Tipo de Ventilación (SolicitudTableros)'.'Forzada (ventilador)';
-                      "sellado";     'Tipo de Ventilación (SolicitudTableros)'.'Sellado (IP alto)';
-                      'Tipo de Ventilación (SolicitudTableros)'.'Climatizado (aire acondicionado)'
+                      "natural";     'TipoVentilacion (SolicitudTableros)'.Natural;
+                      "forzada";     'TipoVentilacion (SolicitudTableros)'.'Forzada (ventilador)';
+                      "sellado";     'TipoVentilacion (SolicitudTableros)'.'Sellado (IP alto)';
+                      'TipoVentilacion (SolicitudTableros)'.'Climatizado (aire acondicionado)'
                     );
                     ExpansionFutura: Switch(t.ExpansionFutura;
-                      "no";  'Expansión Futura (SolicitudTableros)'.'Sin expansión';
-                      "10";  'Expansión Futura (SolicitudTableros)'.'10%';
-                      "20";  'Expansión Futura (SolicitudTableros)'.'20%';
-                      "30";  'Expansión Futura (SolicitudTableros)'.'30%';
-                      'Expansión Futura (SolicitudTableros)'.Otro
+                      "no";  'ExpansionFutura (SolicitudTableros)'.'Sin expansión';
+                      "10";  'ExpansionFutura (SolicitudTableros)'.'10%';
+                      "20";  'ExpansionFutura (SolicitudTableros)'.'20%';
+                      "30";  'ExpansionFutura (SolicitudTableros)'.'30%';
+                      'ExpansionFutura (SolicitudTableros)'.Otro
                     );
                     ObservacionesTablero: t.ObservacionesTablero
                   })
@@ -1026,7 +1037,7 @@ no sobre los controles directamente.
   Si cambias una etiqueta allá, actualiza el `Switch` correspondiente aquí —
   y también su par en las colecciones `colOpc*` de "App — colección e
   inicialización", que son la fuente de esa misma etiqueta para `Items`.
-- Los nombres de columna citados (`'Tipo de Entrega (SolicitudTableros)'`, etc.)
+- Los nombres de columna citados (`'TipoEntrega (SolicitudTableros)'`, etc.)
   asumen que le diste esos **nombres para mostrar** a las columnas al crearlas.
   Si usaste otros nombres, ajusta las citas — el prefijo de editor (`csen_`) no
   se escribe en la fórmula, Power Fx resuelve por nombre para mostrar.
