@@ -33,17 +33,23 @@ scrTableros ─Siguiente→ scrDocumentacion ─Enviar→ scrConfirmacion
   como activa) — mismo control en las 7 pantallas, solo cambia el `Default`
   (y el `DisplayMode`, ver abajo).
 - Las **4 pantallas del tablero** (`scrTableroForm`, `2a`, `2b`, `3`) llevan
-  **doble barra apilada**: `navPestanas` arriba (Y=0) + su propia **barra de
-  sub-pestañas** debajo (`ModernTabList`, `navSubPasos` — "1. Identificación /
-  2. Ubicación y montaje / 3. Eléctrico / 4. Constructivo", Y=40). Ambas son
-  **solo indicativas** (`DisplayMode: =DisplayMode.View` — sin clic, sin
-  hover): muestran en qué sección y en qué paso está el usuario, pero **no
-  navegan**. Dentro del sub-flujo del tablero, la única forma de moverse es
-  **Atrás/Siguiente** (que sí validan cada paso) o **Cancelar**/**Guardar
-  tablero** — así no hay forma de saltarse la validación por pestaña, ni en
-  las 3 pantallas principales ni dentro del tablero. Se entra desde
-  `scrTableros` (Agregar o Editar) y se sale por `scrTableros` (Guardar
-  tablero en el paso 4, o **Cancelar** con confirmación en cualquier paso).
+  **doble barra apilada**, con roles distintos:
+  - **`navPestanas`** (arriba, Y=0) es **solo indicativa**
+    (`DisplayMode: =DisplayMode.View` — sin clic, sin hover): siempre marca
+    "Tableros", pero no navega. Salir del sub-flujo del tablero hacia otra
+    sección abandonaría un tablero a medio llenar sin aviso, así que esa
+    salida solo se hace por **Cancelar** (con confirmación).
+  - **`navSubPasos`** (debajo, Y=40) **sí es clickeable**, con el mismo patrón
+    de gateo que `navPestanas` pero con su propia variable
+    (`varPasoMaximoTablero`, 1 a 4): retroceder a un paso ya completado
+    navega libre; saltar adelante sin haber validado el paso anterior muestra
+    un aviso y no navega. `varPasoMaximoTablero` se resetea a `1` en
+    **Agregar Tablero** (nuevo, arranca en el paso 1) y a `4` en **Editar**
+    (tablero ya guardado, se asume completo → navegación libre entre sus 4
+    pasos); cada **Siguiente** lo sube con `Max(...)` al validar su paso.
+  Se entra desde `scrTableros` (Agregar o Editar) y se sale por `scrTableros`
+  (Guardar tablero en el paso 4, o **Cancelar** con confirmación en cualquier
+  paso).
 - Los valores de los controles **se conservan** al navegar entre las 4
   pantallas del tablero — Power Apps no destruye los controles de pantallas
   no visibles, así que un control del paso 4 puede leer uno del paso 1, y no
@@ -103,6 +109,12 @@ App:
       // 3=Documentación). Gatea el avance por pestañas: hacia atrás siempre
       // se permite; hacia adelante solo hasta este número.
       Set(varPasoMaximo; 1);;
+      // Igual que varPasoMaximo, pero para las sub-pestañas (navSubPasos)
+      // dentro del sub-flujo del tablero (1=Identificación...4=Constructivo).
+      // Se resetea a 1 en btnAgregarTablero (tablero nuevo) y a 4 en
+      // btnEditarTablero (tablero ya guardado, se asume completo → navegación
+      // libre entre sus 4 pasos).
+      Set(varPasoMaximoTablero; 1);;
       // Contador para TableroId: identifica cada tablero de forma única y
       // estable (a diferencia de Orden, nunca se reutiliza tras un Eliminar).
       // Necesario porque AmbienteEspecial/ProteccionesRequeridas/MarcasPreferidas
@@ -570,6 +582,7 @@ Screens:
             OnSelect: |
               Set(varEditIndex; galTableros.Selected);;
               Set(varValidarTablero; false);;
+              Set(varPasoMaximoTablero; 4);;
               Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
               Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
               Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(numNumeroCircuitos);;
@@ -631,6 +644,7 @@ Screens:
             OnSelect: |
               Set(varEditIndex; Blank());;
               Set(varValidarTablero; false);;
+              Set(varPasoMaximoTablero; 1);;
               Reset(ddTipoEntrega);; Reset(ddInstalacionNuevaReemplazo);; Reset(txtNombreTablero);;
               Reset(numCantidad);; Reset(ddTipoTablero);; Reset(txtOtroTipoTablero);;
               Reset(txtFuncionTablero);; Reset(txtCargasAAlimentar);; Reset(numNumeroCircuitos);;
@@ -731,10 +745,40 @@ Screens:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="1. Identificación"
             Appearance: =TabListAppearance.Underline
-            DisplayMode: =DisplayMode.View
             X: =0
             Y: =40
             Width: =Parent.Width
+            OnChange: |
+              Switch(
+                Self.Selected.Value;
+                "1. Identificación";
+                  If(
+                    varPasoMaximoTablero >= 1;
+                    Navigate(scrTableroForm; ScreenTransition.None);
+                    Notify("Completa el paso anterior antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                "2. Ubicación y montaje";
+                  If(
+                    varPasoMaximoTablero >= 2;
+                    Navigate(scrTableroForm2a; ScreenTransition.None);
+                    Notify("Completa el paso 1 antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                "3. Eléctrico";
+                  If(
+                    varPasoMaximoTablero >= 3;
+                    Navigate(scrTableroForm2b; ScreenTransition.None);
+                    Notify("Completa el paso 2 antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                If(
+                  varPasoMaximoTablero >= 4;
+                  Navigate(scrTableroForm3; ScreenTransition.None);
+                  Notify("Completa el paso 3 antes de continuar."; NotificationType.Warning);;
+                  Reset(navSubPasos)
+                )
+              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
@@ -918,6 +962,7 @@ Screens:
               If(
                 Not(pasoIdentificacionOK);
                 Set(varValidarTablero; true);; Notify("Completa los obligatorios marcados en rojo."; NotificationType.Error);
+                Set(varPasoMaximoTablero; Max(varPasoMaximoTablero; 2));;
                 Navigate(scrTableroForm2a; ScreenTransition.Cover)
               )
 
@@ -939,10 +984,40 @@ Screens:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="2. Ubicación y montaje"
             Appearance: =TabListAppearance.Underline
-            DisplayMode: =DisplayMode.View
             X: =0
             Y: =40
             Width: =Parent.Width
+            OnChange: |
+              Switch(
+                Self.Selected.Value;
+                "1. Identificación";
+                  If(
+                    varPasoMaximoTablero >= 1;
+                    Navigate(scrTableroForm; ScreenTransition.None);
+                    Notify("Completa el paso anterior antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                "2. Ubicación y montaje";
+                  If(
+                    varPasoMaximoTablero >= 2;
+                    Navigate(scrTableroForm2a; ScreenTransition.None);
+                    Notify("Completa el paso 1 antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                "3. Eléctrico";
+                  If(
+                    varPasoMaximoTablero >= 3;
+                    Navigate(scrTableroForm2b; ScreenTransition.None);
+                    Notify("Completa el paso 2 antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                If(
+                  varPasoMaximoTablero >= 4;
+                  Navigate(scrTableroForm3; ScreenTransition.None);
+                  Notify("Completa el paso 3 antes de continuar."; NotificationType.Warning);;
+                  Reset(navSubPasos)
+                )
+              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
@@ -1162,6 +1237,7 @@ Screens:
               If(
                 Not(pasoUbicacionOK);
                 Set(varValidarTablero; true);; Notify("Completa los obligatorios marcados en rojo."; NotificationType.Error);
+                Set(varPasoMaximoTablero; Max(varPasoMaximoTablero; 3));;
                 Navigate(scrTableroForm2b; ScreenTransition.Cover)
               )
 
@@ -1183,10 +1259,40 @@ Screens:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="3. Eléctrico"
             Appearance: =TabListAppearance.Underline
-            DisplayMode: =DisplayMode.View
             X: =0
             Y: =40
             Width: =Parent.Width
+            OnChange: |
+              Switch(
+                Self.Selected.Value;
+                "1. Identificación";
+                  If(
+                    varPasoMaximoTablero >= 1;
+                    Navigate(scrTableroForm; ScreenTransition.None);
+                    Notify("Completa el paso anterior antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                "2. Ubicación y montaje";
+                  If(
+                    varPasoMaximoTablero >= 2;
+                    Navigate(scrTableroForm2a; ScreenTransition.None);
+                    Notify("Completa el paso 1 antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                "3. Eléctrico";
+                  If(
+                    varPasoMaximoTablero >= 3;
+                    Navigate(scrTableroForm2b; ScreenTransition.None);
+                    Notify("Completa el paso 2 antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                If(
+                  varPasoMaximoTablero >= 4;
+                  Navigate(scrTableroForm3; ScreenTransition.None);
+                  Notify("Completa el paso 3 antes de continuar."; NotificationType.Warning);;
+                  Reset(navSubPasos)
+                )
+              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
@@ -1411,6 +1517,7 @@ Screens:
               If(
                 Not(pasoElectricoOK);
                 Set(varValidarTablero; true);; Notify("Completa los obligatorios marcados en rojo."; NotificationType.Error);
+                Set(varPasoMaximoTablero; Max(varPasoMaximoTablero; 4));;
                 Navigate(scrTableroForm3; ScreenTransition.Cover)
               )
 
@@ -1432,10 +1539,40 @@ Screens:
             Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
             Default: ="4. Constructivo"
             Appearance: =TabListAppearance.Underline
-            DisplayMode: =DisplayMode.View
             X: =0
             Y: =40
             Width: =Parent.Width
+            OnChange: |
+              Switch(
+                Self.Selected.Value;
+                "1. Identificación";
+                  If(
+                    varPasoMaximoTablero >= 1;
+                    Navigate(scrTableroForm; ScreenTransition.None);
+                    Notify("Completa el paso anterior antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                "2. Ubicación y montaje";
+                  If(
+                    varPasoMaximoTablero >= 2;
+                    Navigate(scrTableroForm2a; ScreenTransition.None);
+                    Notify("Completa el paso 1 antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                "3. Eléctrico";
+                  If(
+                    varPasoMaximoTablero >= 3;
+                    Navigate(scrTableroForm2b; ScreenTransition.None);
+                    Notify("Completa el paso 2 antes de continuar."; NotificationType.Warning);;
+                    Reset(navSubPasos)
+                  );
+                If(
+                  varPasoMaximoTablero >= 4;
+                  Navigate(scrTableroForm3; ScreenTransition.None);
+                  Notify("Completa el paso 3 antes de continuar."; NotificationType.Warning);;
+                  Reset(navSubPasos)
+                )
+              )
       - lblProgreso:
           Control: ModernText@1.0.0
           Properties:
