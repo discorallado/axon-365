@@ -109,6 +109,9 @@ App:
       // copias del control (3 pantallas principales + 4 del tablero) en vez
       // de repetir el array literal en cada una.
       Set(varNavPestanas; ["Contacto y Proyecto"; "Tableros"; "Documentación"]);;
+      // Igual que varNavPestanas, pero para las 4 copias de navSubPasos
+      // (dentro de las 4 pantallas del tablero).
+      Set(varNavSubPasos; ["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]);;
       // Pestaña más lejana ya alcanzada válidamente (1=Contacto, 2=Tableros,
       // 3=Documentación). Gatea el avance por pestañas: hacia atrás siempre
       // se permite; hacia adelante solo hasta este número.
@@ -746,7 +749,7 @@ Screens:
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
+            Items: =varNavSubPasos
             Default: ="1. Identificación"
             Appearance: =TabListAppearance.Underline
             X: =0
@@ -985,7 +988,7 @@ Screens:
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
+            Items: =varNavSubPasos
             Default: ="2. Ubicación y montaje"
             Appearance: =TabListAppearance.Underline
             X: =0
@@ -1260,7 +1263,7 @@ Screens:
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
+            Items: =varNavSubPasos
             Default: ="3. Eléctrico"
             Appearance: =TabListAppearance.Underline
             X: =0
@@ -1540,7 +1543,7 @@ Screens:
       - navSubPasos:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["1. Identificación"; "2. Ubicación y montaje"; "3. Eléctrico"; "4. Constructivo"]
+            Items: =varNavSubPasos
             Default: ="4. Constructivo"
             Appearance: =TabListAppearance.Underline
             X: =0
