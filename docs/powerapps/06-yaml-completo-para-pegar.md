@@ -105,6 +105,10 @@ App:
     OnStart: |
       Set(varEditIndex; Blank());;
       Set(varValidarTablero; false);;
+      // Items de navPestanas centralizados: una sola definición para las 7
+      // copias del control (3 pantallas principales + 4 del tablero) en vez
+      // de repetir el array literal en cada una.
+      Set(varNavPestanas; ["Contacto y Proyecto"; "Tableros"; "Documentación"]);;
       // Pestaña más lejana ya alcanzada válidamente (1=Contacto, 2=Tableros,
       // 3=Documentación). Gatea el avance por pestañas: hacia atrás siempre
       // se permite; hacia adelante solo hasta este número.
@@ -392,7 +396,7 @@ Screens:
       - navPestanas:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Items: =varNavPestanas
             Default: ="Contacto y Proyecto"
             Appearance: =TabListAppearance.Underline
             X: =0
@@ -522,7 +526,7 @@ Screens:
       - navPestanas:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Items: =varNavPestanas
             Default: ="Tableros"
             Appearance: =TabListAppearance.Underline
             X: =0
@@ -732,7 +736,7 @@ Screens:
       - navPestanas:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Items: =varNavPestanas
             Default: ="Tableros"
             Appearance: =TabListAppearance.Underline
             DisplayMode: =DisplayMode.View
@@ -971,7 +975,7 @@ Screens:
       - navPestanas:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Items: =varNavPestanas
             Default: ="Tableros"
             Appearance: =TabListAppearance.Underline
             DisplayMode: =DisplayMode.View
@@ -1246,7 +1250,7 @@ Screens:
       - navPestanas:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Items: =varNavPestanas
             Default: ="Tableros"
             Appearance: =TabListAppearance.Underline
             DisplayMode: =DisplayMode.View
@@ -1526,7 +1530,7 @@ Screens:
       - navPestanas:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Items: =varNavPestanas
             Default: ="Tableros"
             Appearance: =TabListAppearance.Underline
             DisplayMode: =DisplayMode.View
@@ -1802,7 +1806,7 @@ Screens:
       - navPestanas:
           Control: ModernTabList@1.0.0
           Properties:
-            Items: =["Contacto y Proyecto"; "Tableros"; "Documentación"]
+            Items: =varNavPestanas
             Default: ="Documentación"
             Appearance: =TabListAppearance.Underline
             X: =0
