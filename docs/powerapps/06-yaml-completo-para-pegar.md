@@ -400,7 +400,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavPestanas
-            Default: ="Contacto y Proyecto"
+            Default: =Index(varNavPestanas; 1).Value
             Appearance: =TabListAppearance.Underline
             X: =0
             Y: =0
@@ -408,8 +408,8 @@ Screens:
             OnChange: |
               Switch(
                 Self.Selected.Value;
-                "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-                "Tableros";
+                Index(varNavPestanas; 1).Value; Navigate(scrContactoProyecto; ScreenTransition.None);
+                Index(varNavPestanas; 2).Value;
                   If(
                     varPasoMaximo >= 2;
                     Navigate(scrTableros; ScreenTransition.None);
@@ -530,7 +530,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavPestanas
-            Default: ="Tableros"
+            Default: =Index(varNavPestanas; 2).Value
             Appearance: =TabListAppearance.Underline
             X: =0
             Y: =0
@@ -538,8 +538,8 @@ Screens:
             OnChange: |
               Switch(
                 Self.Selected.Value;
-                "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-                "Tableros";
+                Index(varNavPestanas; 1).Value; Navigate(scrContactoProyecto; ScreenTransition.None);
+                Index(varNavPestanas; 2).Value;
                   If(
                     varPasoMaximo >= 2;
                     Navigate(scrTableros; ScreenTransition.None);
@@ -740,7 +740,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavPestanas
-            Default: ="Tableros"
+            Default: =Index(varNavPestanas; 2).Value
             Appearance: =TabListAppearance.Underline
             DisplayMode: =DisplayMode.View
             X: =0
@@ -750,7 +750,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavSubPasos
-            Default: ="1. Identificación"
+            Default: =Index(varNavSubPasos; 1).Value
             Appearance: =TabListAppearance.Underline
             X: =0
             Y: =40
@@ -758,21 +758,21 @@ Screens:
             OnChange: |
               Switch(
                 Self.Selected.Value;
-                "1. Identificación";
+                Index(varNavSubPasos; 1).Value;
                   If(
                     varPasoMaximoTablero >= 1;
                     Navigate(scrTableroForm; ScreenTransition.None);
                     Notify("Completa el paso anterior antes de continuar."; NotificationType.Warning);;
                     Reset(navSubPasos)
                   );
-                "2. Ubicación y montaje";
+                Index(varNavSubPasos; 2).Value;
                   If(
                     varPasoMaximoTablero >= 2;
                     Navigate(scrTableroForm2a; ScreenTransition.None);
                     Notify("Completa el paso 1 antes de continuar."; NotificationType.Warning);;
                     Reset(navSubPasos)
                   );
-                "3. Eléctrico";
+                Index(varNavSubPasos; 3).Value;
                   If(
                     varPasoMaximoTablero >= 3;
                     Navigate(scrTableroForm2b; ScreenTransition.None);
@@ -979,7 +979,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavPestanas
-            Default: ="Tableros"
+            Default: =Index(varNavPestanas; 2).Value
             Appearance: =TabListAppearance.Underline
             DisplayMode: =DisplayMode.View
             X: =0
@@ -989,7 +989,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavSubPasos
-            Default: ="2. Ubicación y montaje"
+            Default: =Index(varNavSubPasos; 2).Value
             Appearance: =TabListAppearance.Underline
             X: =0
             Y: =40
@@ -997,21 +997,21 @@ Screens:
             OnChange: |
               Switch(
                 Self.Selected.Value;
-                "1. Identificación";
+                Index(varNavSubPasos; 1).Value;
                   If(
                     varPasoMaximoTablero >= 1;
                     Navigate(scrTableroForm; ScreenTransition.None);
                     Notify("Completa el paso anterior antes de continuar."; NotificationType.Warning);;
                     Reset(navSubPasos)
                   );
-                "2. Ubicación y montaje";
+                Index(varNavSubPasos; 2).Value;
                   If(
                     varPasoMaximoTablero >= 2;
                     Navigate(scrTableroForm2a; ScreenTransition.None);
                     Notify("Completa el paso 1 antes de continuar."; NotificationType.Warning);;
                     Reset(navSubPasos)
                   );
-                "3. Eléctrico";
+                Index(varNavSubPasos; 3).Value;
                   If(
                     varPasoMaximoTablero >= 3;
                     Navigate(scrTableroForm2b; ScreenTransition.None);
@@ -1254,7 +1254,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavPestanas
-            Default: ="Tableros"
+            Default: =Index(varNavPestanas; 2).Value
             Appearance: =TabListAppearance.Underline
             DisplayMode: =DisplayMode.View
             X: =0
@@ -1264,7 +1264,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavSubPasos
-            Default: ="3. Eléctrico"
+            Default: =Index(varNavSubPasos; 3).Value
             Appearance: =TabListAppearance.Underline
             X: =0
             Y: =40
@@ -1272,21 +1272,21 @@ Screens:
             OnChange: |
               Switch(
                 Self.Selected.Value;
-                "1. Identificación";
+                Index(varNavSubPasos; 1).Value;
                   If(
                     varPasoMaximoTablero >= 1;
                     Navigate(scrTableroForm; ScreenTransition.None);
                     Notify("Completa el paso anterior antes de continuar."; NotificationType.Warning);;
                     Reset(navSubPasos)
                   );
-                "2. Ubicación y montaje";
+                Index(varNavSubPasos; 2).Value;
                   If(
                     varPasoMaximoTablero >= 2;
                     Navigate(scrTableroForm2a; ScreenTransition.None);
                     Notify("Completa el paso 1 antes de continuar."; NotificationType.Warning);;
                     Reset(navSubPasos)
                   );
-                "3. Eléctrico";
+                Index(varNavSubPasos; 3).Value;
                   If(
                     varPasoMaximoTablero >= 3;
                     Navigate(scrTableroForm2b; ScreenTransition.None);
@@ -1534,7 +1534,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavPestanas
-            Default: ="Tableros"
+            Default: =Index(varNavPestanas; 2).Value
             Appearance: =TabListAppearance.Underline
             DisplayMode: =DisplayMode.View
             X: =0
@@ -1544,7 +1544,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavSubPasos
-            Default: ="4. Constructivo"
+            Default: =Index(varNavSubPasos; 4).Value
             Appearance: =TabListAppearance.Underline
             X: =0
             Y: =40
@@ -1552,21 +1552,21 @@ Screens:
             OnChange: |
               Switch(
                 Self.Selected.Value;
-                "1. Identificación";
+                Index(varNavSubPasos; 1).Value;
                   If(
                     varPasoMaximoTablero >= 1;
                     Navigate(scrTableroForm; ScreenTransition.None);
                     Notify("Completa el paso anterior antes de continuar."; NotificationType.Warning);;
                     Reset(navSubPasos)
                   );
-                "2. Ubicación y montaje";
+                Index(varNavSubPasos; 2).Value;
                   If(
                     varPasoMaximoTablero >= 2;
                     Navigate(scrTableroForm2a; ScreenTransition.None);
                     Notify("Completa el paso 1 antes de continuar."; NotificationType.Warning);;
                     Reset(navSubPasos)
                   );
-                "3. Eléctrico";
+                Index(varNavSubPasos; 3).Value;
                   If(
                     varPasoMaximoTablero >= 3;
                     Navigate(scrTableroForm2b; ScreenTransition.None);
@@ -1810,7 +1810,7 @@ Screens:
           Control: ModernTabList@1.0.0
           Properties:
             Items: =varNavPestanas
-            Default: ="Documentación"
+            Default: =Index(varNavPestanas; 3).Value
             Appearance: =TabListAppearance.Underline
             X: =0
             Y: =0
@@ -1818,8 +1818,8 @@ Screens:
             OnChange: |
               Switch(
                 Self.Selected.Value;
-                "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-                "Tableros";
+                Index(varNavPestanas; 1).Value; Navigate(scrContactoProyecto; ScreenTransition.None);
+                Index(varNavPestanas; 2).Value;
                   If(
                     varPasoMaximo >= 2;
                     Navigate(scrTableros; ScreenTransition.None);

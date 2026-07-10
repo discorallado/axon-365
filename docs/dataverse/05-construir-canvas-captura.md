@@ -129,23 +129,26 @@ entrar a esa pantalla) y, en las 4 del tablero, el `DisplayMode`.
    "Tableros"; "Documentación"]);;` — ver sección **App — colección e
    inicialización**).
 3. **`Default`** — **distinto en cada pantalla**, la pestaña que corresponde a
-   esa pantalla:
-   - En `scrContactoProyecto`: `"Contacto y Proyecto"`
-   - En `scrTableros`: `"Tableros"`
-   - En `scrDocumentacion`: `"Documentación"`
-   - En las 4 pantallas del tablero: `"Tableros"`
+   esa pantalla — referenciado por índice sobre `varNavPestanas` (no como
+   texto literal, para no repetir el string y que quede sincronizado si
+   cambia el texto de una pestaña):
+   - En `scrContactoProyecto`: `Index(varNavPestanas; 1).Value`
+   - En `scrTableros` y en las 4 pantallas del tablero: `Index(varNavPestanas; 2).Value`
+   - En `scrDocumentacion`: `Index(varNavPestanas; 3).Value`
 4. **`OnChange`** (igual en las 3 copias) — navega según la pestaña elegida,
    pero **gatea el avance hacia adelante** con `varPasoMaximo` (variable global
    que trackea hasta qué pestaña ya se validó: `1` = Contacto, `2` = Tableros,
    `3` = Documentación; se inicializa en `App.OnStart` — Bloque 14). Hacia
    **atrás** siempre navega libre, sin condición — solo lo de adelante se
-   bloquea. `OnChange` solo dispara cuando el usuario cambia de pestaña (no si
-   toca la ya activa), así que no navega en falso a la misma pantalla:
+   bloquea. Los casos del `Switch` también referencian `varNavPestanas` por
+   índice (no el texto literal), por la misma razón que el `Default`.
+   `OnChange` solo dispara cuando el usuario cambia de pestaña (no si toca
+   la ya activa), así que no navega en falso a la misma pantalla:
    ```
    Switch(
      Self.Selected.Value;
-     "Contacto y Proyecto"; Navigate(scrContactoProyecto; ScreenTransition.None);
-     "Tableros";
+     Index(varNavPestanas; 1).Value; Navigate(scrContactoProyecto; ScreenTransition.None);
+     Index(varNavPestanas; 2).Value;
        If(
          varPasoMaximo >= 2;
          Navigate(scrTableros; ScreenTransition.None);
@@ -224,14 +227,16 @@ ese documento ya trae la arquitectura de 8 pantallas completa, control por
 control. Agrega la **barra de pestañas** del Bloque 14b arriba de todo en
 `scrTableros` (funcional, como en las otras 2 pantallas principales). En las
 **4 pantallas del formulario** agrega **las dos barras apiladas**: una copia
-más de `navPestanas` en `Y=0` (`Default: ="Tableros"`), con
-`DisplayMode: =DisplayMode.View` (solo indicativa: sin clic, sin hover —
+más de `navPestanas` en `Y=0` (`Default: =Index(varNavPestanas; 2).Value`),
+con `DisplayMode: =DisplayMode.View` (solo indicativa: sin clic, sin hover —
 salir del sub-flujo hacia otra sección se hace solo por Cancelar); y debajo,
-`navSubPasos` en `Y=40`, que sí queda clickeable y gateado por
-`varPasoMaximoTablero` (mismo patrón que `varPasoMaximo` de las pestañas
-principales: retrocede libre, bloquea el salto adelante sin validar —
-`Set(varPasoMaximoTablero; 1)` en Agregar Tablero, `Set(varPasoMaximoTablero;
-4)` en Editar, y `Set(varPasoMaximoTablero; Max(...))` en cada Siguiente).
+`navSubPasos` en `Y=40` (`Items: =varNavSubPasos`, `Default` por índice sobre
+esa misma variable — igual patrón que `varNavPestanas`), que sí queda
+clickeable y gateado por `varPasoMaximoTablero` (mismo patrón que
+`varPasoMaximo` de las pestañas principales: retrocede libre, bloquea el
+salto adelante sin validar — `Set(varPasoMaximoTablero; 1)` en Agregar
+Tablero, `Set(varPasoMaximoTablero; 4)` en Editar, y
+`Set(varPasoMaximoTablero; Max(...))` en cada Siguiente).
 Baja el resto de los campos de cada pantalla ~40px para que no queden
 tapados por la segunda barra (coordenadas ya ajustadas en el YAML del 06).
 
