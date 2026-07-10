@@ -43,7 +43,7 @@ Historia de la decisión: [ADR 0001](docs/adr/0001-canvas-sharepoint-sobre-datav
 | `docs/instrucciones-proyecto.md` | Instrucciones persistentes para Cowork/Claude (decisiones firmes, método, qué no hacer) |
 | `docs/adr/` | Decisiones: `0001` SharePoint (superseded), `0002` pivote a Dataverse |
 | `docs/dataverse/` | **Vigente** — `00` guía mecánica de construcción (Solución/tablas/roles), `01` tablas, `02` BPF + security roles, `03` Plan Developer y despliegue, `04` Business Rules/vistas/formularios/app Model-driven, `05` construir el wizard Canvas (8 pantallas: 3 con pestañas + 4 pasos del tablero + confirmación) en el navegador |
-| `docs/powerapps/` | `04` gestión, `05` YAML/fórmulas de captura (Dataverse), `06` **YAML completo consolidado — diseño final de 8 pantallas, probado en Studio real, con sub-pestañas en el tablero + capa a prueba de tontos**, `07` referencia rápida de colecciones (`colOpc*`) |
+| `docs/powerapps/` | `04` gestión, `05` YAML/fórmulas de captura (Dataverse), `06` **YAML completo consolidado — diseño final de 8 pantallas, probado en Studio real, con sub-pestañas en el tablero + capa a prueba de tontos**, `07` referencia rápida de colecciones (`colOpc*`), `08` ⏳ **en construcción** — responsive con containers de auto-layout |
 | `docs/powerautomate/` | Flujo F-1 vigente (notificaciones + acuse); F-2 → reemplazado por el flujo real-time de estados de `dataverse/02` |
 
 ## Orden de construcción recomendado (Dataverse)
